@@ -2,11 +2,17 @@ const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { Pool } = require('pg');
+const dotenv = require('dotenv');
 
 // Load environment variables in development
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
+  dotenv.config();
+}
+
+// Check if environment variables are set
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.JWT_SECRET) {
+  console.error('Missing required environment variables');
+  process.exit(1);
 }
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -20,6 +26,16 @@ app.use(express.static('../frontend/public'));
 // Initialize PostgreSQL client using environment variables
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+});
+
+// Check database connection
+pool.connect((err) => {
+  if (err) {
+    console.error('Failed to connect to the database:', err);
+    process.exit(1);
+  } else {
+    console.log('Connected to the database');
+  }
 });
 
 // JWT secret from environment variables
@@ -220,14 +236,29 @@ app.get('/api/user/:id', async (req, res) => {
       .eq('user_id', id)
       .single();
 
-    if (error) {
-      return res.status(400).json({ error: error.message });
+    if (error || !data) {
+      // Provide placeholder data if no user data is found
+      return res.status(200).json({
+        user: {
+          user_id: id,
+          full_name: 'New User',
+          email: 'example@example.com',
+          phone_number: 'N/A',
+          date_of_birth: 'N/A',
+          residential_address: 'N/A',
+          account_type: 'N/A',
+          username: 'N/A',
+          balance: 0.00 // Default balance if required
+        }
+      });
     }
+
     res.json({ user: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // -----------------------------------------------------------------
 // Start the Server
