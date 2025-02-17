@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Chart from 'chart.js/auto';
+import logo from '../assets/Layer 2.png';
+import userProfilePic from '../assets/avatars-3-d-avatar-210.png'; // Adjust path as needed
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faBars, 
@@ -11,6 +13,7 @@ import {
   faChartLine, 
   faCreditCard, 
   faArrowDown, 
+  faMoneyBillTransfer,
   faArrowUp, 
   faMoneyCheckAlt, 
   faChartPie, 
@@ -119,16 +122,16 @@ const UserDashboard = () => {
       <header className="bg-sky-50 h-36 shadow-md p-4 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <div>
-            <img src="adobe-express-file-4-10.png" alt="Logo" className="h-10" />
+            <img src={logo} alt="Logo" className="h-16" />
           </div>
           <nav className="hidden md:flex space-x-6">
-            <a href="#" className="text-teal-900 font-medium hover:text-blue-700">Home</a>
-            <a href="#" className="text-teal-900 font-medium hover:text-blue-700">Transactions</a>
-            <a href="#" className="text-teal-900 font-medium hover:text-blue-700">Analytics</a>
-            <a href="#" className="text-teal-900 font-medium hover:text-blue-700">Cards</a>
-            <a href="#" className="text-teal-900 font-medium hover:text-blue-700">Payments</a>
-            <a href="#" className="text-teal-900 font-medium hover:text-blue-700">Investments</a>
-            <a href="#" className="text-teal-900 font-medium hover:text-blue-700">Settings</a>
+            <Link to="/" className="text-teal-900 font-medium hover:text-blue-700">Home</Link>
+            <Link to="/transaction-history" className="text-teal-900 font-medium hover:text-blue-700">Transactions</Link>
+            <Link to="/analytics" className="text-teal-900 font-medium hover:text-blue-700">Analytics</Link>
+            <Link to="/cards" className="text-teal-900 font-medium hover:text-blue-700">Cards</Link>
+            <Link to="/payments" className="text-teal-900 font-medium hover:text-blue-700">Payments</Link>
+            <Link to="/investments" className="text-teal-900 font-medium hover:text-blue-700">Investments</Link>
+            <Link to="/settings" className="text-teal-900 font-medium hover:text-blue-700">Settings</Link>
           </nav>
         </div>
         {/* Mobile menu open button */}
@@ -154,36 +157,57 @@ const UserDashboard = () => {
             <FontAwesomeIcon icon={faTimes} />
           </button>
           <nav className="mt-6 space-y-4">
-            <a href="#" className="block text-sky-50 hover:text-white">
+          
+            <Link to="/" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faHome} /> Dashboard
-            </a>
-            <a href="./AccountOverview.jsx" className="block text-sky-50 hover:text-white">
-                <FontAwesomeIcon icon={faMoneyBill} /> Accounts
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+
+            <Link to="/account-overview" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
+              <FontAwesomeIcon icon={faMoneyBill} /> Accounts
+            </Link>
+
+            <Link to="/transaction-history" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faMoneyBillWave} /> Transactions
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+
+            <Link to="/analytics" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faChartLine} /> Analytics
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+
+            <Link to="/transfer" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
+            <FontAwesomeIcon icon={faMoneyBillTransfer} /> Transfer Funds
+            </Link>
+
+            <Link to="/transfer" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
+            <FontAwesomeIcon icon={faMoneyBillTransfer} /> Transfer Funds
+            </Link>
+
+            <Link to="/loan" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>Loans
+            </Link>
+
+            <Link to="/cards" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faCreditCard} /> Cards
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+
+            <Link to="/deposits" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faArrowDown} /> Deposits
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+
+            <Link to="/withdrawals" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faArrowUp} /> Withdrawals
-            </a>
-            <a href="./BillPayments.jsx" className="block text-sky-50 hover:text-white">
+            </Link>
+
+            <Link to="/bill-payments" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faMoneyCheckAlt} /> Payments
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+
+            <Link to="/investments" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faChartPie} /> Investments
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+
+            <Link to="/settings" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faCog} /> Settings
-            </a>
+            </Link>
           </nav>
         </aside>
       )}
@@ -192,36 +216,35 @@ const UserDashboard = () => {
         {/* MAIN SIDEBAR (Desktop) */}
         <aside className="w-64 bg-green-700 text-white p-6 hidden md:block">
           <nav className="mt-6 space-y-4 h-full">
-            <a href="#" className="block text-sky-50 hover:text-white">
+            <Link to="/" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faHome} /> Dashboard
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+            <Link to="/transaction-history" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faMoneyBillWave} /> Transactions
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+            <Link to="/analytics" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faChartLine} /> Analytics
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+            <Link to="/cards" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faCreditCard} /> Cards
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+            <Link to="/deposits" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faArrowDown} /> Deposits
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+            <Link to="/withdrawals" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faArrowUp} /> Withdrawals
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+            <Link to="/bill-payments" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faMoneyCheckAlt} /> Payments
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+            <Link to="/investments" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faChartPie} /> Investments
-            </a>
-            <a href="#" className="block text-sky-50 hover:text-white">
+            </Link>
+            <Link to="/settings" className="block text-sky-50 hover:text-white">
               <FontAwesomeIcon icon={faCog} /> Settings
-            </a>
+            </Link>
           </nav>
         </aside>
-
         {/* MAIN CONTENT */}
         <main className="flex-1 p-6">
           {/* SECTION 1: User Profile, Account ID & Account Type, Balance Card */}
@@ -229,8 +252,12 @@ const UserDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left: Account Type */}
               <div className="flex flex-col justify-center">
-                <span className="text-lg font-bold text-gray-700 text-center md:text-left">Account Type:</span>
-                <span className="text-gray-600 text-center md:text-left">{userData.account_type}</span>
+                <span className="text-lg font-bold text-gray-700 text-center md:text-left">
+                  Account Type:
+                </span>
+                <span className="text-gray-600 text-center md:text-left">
+                  {userData.account_type}
+                </span>
               </div>
               {/* Right: Profile Card */}
               <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between space-x-4">
@@ -238,7 +265,7 @@ const UserDashboard = () => {
                   <span className="text-lg font-bold text-gray-700">Account Number:</span>
                   <span className="text-gray-600">{userData.account_number}</span>
                 </div>
-                <img src="avatars-3-d-avatar-210.png" alt="User Profile" className="h-16 w-16 rounded-full object-cover" />
+                <img src={userProfilePic} alt="User Profile" className="h-16 w-16 rounded-full object-cover" />
               </div>
             </div>
             {/* Row 2: Balance Card with Toggle */}
@@ -267,19 +294,21 @@ const UserDashboard = () => {
               <p className="text-3xl font-semibold text-red-600">₵{totalExpenditure}</p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full bg-white shadow-md rounded-lg">
-                <thead>
-                  <tr className="bg-gray-800 text-white">
-                    <th className="py-3 px-4 text-left">Date</th>
-                    <th className="py-3 px-4 text-left">Description</th>
-                    <th className="py-3 px-4 text-right">Amount</th>
-                    <th className="py-3 px-4 text-right">Status</th>
+              <table className="w-full bg-white text-center shadow-md rounded-lg">
+                <thead className="flex justify-between">
+                  <tr className="bg-sky-100 text-white">
+                    <th className="py-3 px-4 text-black text-left">Date</th>
+                    <th className="py-3 px-4 text-black text-left">Description</th>
+                    <th className="py-3 px-4 text-black text-right">Amount</th>
+                    <th className="py-3 px-4 text-black text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="text-gray-700">
                   {transactions.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="text-center py-4">No recent transactions available</td>
+                      <td colSpan="4" className="text-center py-4">
+                        No recent transactions available
+                      </td>
                     </tr>
                   ) : (
                     transactions.map((tx) => (
@@ -313,10 +342,10 @@ const UserDashboard = () => {
       </div>
 
       {/* FOOTER */}
-  <footer className="bg-teal-900 h-36 text-white text-center p-4">
-    <p>&copy; {new Date().getFullYear()} User Dashboard. All Rights Reserved.</p>
-  </footer>
-</div>
+      <footer className="bg-teal-900 h-36 text-white text-center p-4">
+        <p>&copy; {new Date().getFullYear()} User Dashboard. All Rights Reserved.</p>
+      </footer>
+    </div>
   );
 };
 
