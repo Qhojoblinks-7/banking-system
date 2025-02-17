@@ -3,6 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const { Pool } = require('pg');
 
 // Load environment variables in development
 if (process.env.NODE_ENV !== 'production') {
@@ -10,7 +11,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Check if environment variables are set
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.JWT_SECRET) {
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.JWT_SECRET || !process.env.DATABASE_URL) {
   console.error('Missing required environment variables');
   process.exit(1);
 }
@@ -258,7 +259,6 @@ app.get('/api/user/:id', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // -----------------------------------------------------------------
 // Start the Server
