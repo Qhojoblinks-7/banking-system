@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import userProfilePic from './assets/userProfilePic.png'; // Adjust path as needed
+import userProfilePic from '../assets/avatars-3-d-avatar-210.png'; // Adjust path as needed
 import Layout from './Layout';
 
 const AccountOverview = () => {
