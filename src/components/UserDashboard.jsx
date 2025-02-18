@@ -13,7 +13,6 @@ import {
   faChartLine, 
   faCreditCard, 
   faArrowDown, 
-  faMoneyBillTransfer,
   faArrowUp, 
   faMoneyCheckAlt, 
   faChartPie, 
@@ -118,7 +117,7 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-sky-50 font-sans">
-      {/* HEADER */}
+      HEADER
       <header className="bg-sky-50 h-36 shadow-md p-4 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <div>
@@ -157,54 +156,33 @@ const UserDashboard = () => {
             <FontAwesomeIcon icon={faTimes} />
           </button>
           <nav className="mt-6 space-y-4">
-          
             <Link to="/" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faHome} /> Dashboard
             </Link>
-
             <Link to="/account-overview" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faMoneyBill} /> Accounts
             </Link>
-
             <Link to="/transaction-history" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faMoneyBillWave} /> Transactions
             </Link>
-
             <Link to="/analytics" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faChartLine} /> Analytics
             </Link>
-
-            <Link to="/transfer" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
-            <FontAwesomeIcon icon={faMoneyBillTransfer} /> Transfer Funds
-            </Link>
-
-            <Link to="/transfer" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
-            <FontAwesomeIcon icon={faMoneyBillTransfer} /> Transfer Funds
-            </Link>
-
-            <Link to="/loan" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>Loans
-            </Link>
-
             <Link to="/cards" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faCreditCard} /> Cards
             </Link>
-
             <Link to="/deposits" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faArrowDown} /> Deposits
             </Link>
-
             <Link to="/withdrawals" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faArrowUp} /> Withdrawals
             </Link>
-
             <Link to="/bill-payments" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faMoneyCheckAlt} /> Payments
             </Link>
-
             <Link to="/investments" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faChartPie} /> Investments
             </Link>
-
             <Link to="/settings" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
               <FontAwesomeIcon icon={faCog} /> Settings
             </Link>

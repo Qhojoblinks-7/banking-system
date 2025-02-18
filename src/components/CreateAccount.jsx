@@ -224,7 +224,6 @@ const CreateAccount = () => {
                 >
                   Next
                 </button>
-              )
               {currentStep === stepsConfig.length - 1 && (
                 <button
                   type="submit"
