@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Withdrawals = () => {
+const Withdrawal = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold">Withdrawals</h1>
@@ -9,5 +9,5 @@ const Withdrawals = () => {
   );
 };
 
-export default Withdrawals;
+export default Withdrawal;
 
