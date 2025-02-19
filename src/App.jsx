@@ -1,5 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
+import Footer from './components/Footer';
+
+
 
 // Lazy loading components for better performance
 const CreateAccount = lazy(() => import('./components/CreateAccount'));
@@ -61,9 +64,11 @@ const App = () => {
             </ErrorBoundary>
           } 
         />
+         
         
         {/* Add additional routes for analytics, cards, payments, investments, settings etc. if needed */}
       </Routes>
+        
     </Suspense>
   );
 };
