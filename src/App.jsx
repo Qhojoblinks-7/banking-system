@@ -68,7 +68,7 @@ const App = () => {
         
         {/* Add additional routes for analytics, cards, payments, investments, settings etc. if needed */}
       </Routes>
-        
+       
     </Suspense>
   );
 };

@@ -20,6 +20,7 @@ import {
   faEye, 
   faEyeSlash 
 } from '@fortawesome/free-solid-svg-icons';
+import QuickActions from './QuickActions';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -305,7 +306,7 @@ const UserDashboard = () => {
 
           {/* SECTION 3: Custom Section (Placeholder) */}
           <section className="mt-8 bg-sky-100 w-full p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-gray-900">Your Custom Section</h2>
+            <QuickActions/>
             {/* Additional content goes here */}
           </section>
 
