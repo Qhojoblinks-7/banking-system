@@ -4,6 +4,7 @@ import Chart from 'chart.js/auto';
 import logo from '../assets/Layer 2.png';
 import userProfilePic from '../assets/avatars-3-d-avatar-210.png'; // Adjust path as needed
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+ 
 import { 
   faBars, 
   faTimes, 
@@ -21,6 +22,7 @@ import {
   faEyeSlash 
 } from '@fortawesome/free-solid-svg-icons';
 import QuickActions from './QuickActions';
+import MobileSidebar from './MobileSidebar';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -143,11 +145,13 @@ const UserDashboard = () => {
         >
           <FontAwesomeIcon icon={faBars} />
         </button>
-      </header>
+{/*         <MobileSidebar toggleMobileSidebar={toggleMobileSidebar}  />
+ */}      </header>
+     
 
       {/* MOBILE SIDEBAR */}
-      {mobileSidebarOpen && (
-        <aside className="fixed top-0 left-0 h-screen w-64 bg-emerald-600 text-white p-6 z-50">
+    {mobileSidebarOpen && (
+        <aside className="fixed top-0 left-0 min-h-screen w-[30%]  bg-green-500     text-white p-6 z-50">
           <button
             onClick={toggleMobileSidebar}
             type="button"
@@ -190,7 +194,7 @@ const UserDashboard = () => {
           </nav>
         </aside>
       )}
-
+ 
       <div className="flex flex-col md:flex-row">
         {/* MAIN SIDEBAR (Desktop) */}
         <aside className="w-64 bg-green-700 text-white p-6 hidden md:block">

@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import Footer from './components/Footer';
+import Analytics from './components/Analytics';
 
 
 
@@ -20,6 +21,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/create-account" element={<CreateAccount />} />
+        <Route path="/analytics" element={<Analytics />} />
 
         {/* Wrap error-prone components with ErrorBoundary */}
         <Route 

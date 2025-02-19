@@ -18,7 +18,7 @@ import {
 
 const MobileSidebar = ({ toggleMobileSidebar }) => {
   return (
-    <aside className="fixed top-0 left-0 h-screen w-64 bg-emerald-600 text-white p-6 z-50">
+    <aside className="fixed top-0 left-0 h-screen w-64 bg-emerald-600 text-white p-6 z-50 ">
       <button
         onClick={toggleMobileSidebar}
         type="button"
@@ -27,7 +27,7 @@ const MobileSidebar = ({ toggleMobileSidebar }) => {
       >
         <FontAwesomeIcon icon={faTimes} />
       </button>
-      <nav className="mt-6 space-y-4">
+      <nav className="mt-6 space-y-4 bg-emerald-500">
         <Link to="/" className="block text-sky-50 hover:text-white" onClick={toggleMobileSidebar}>
           <FontAwesomeIcon icon={faHome} /> Dashboard
         </Link>
