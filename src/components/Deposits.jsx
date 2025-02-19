@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Deposits = () => {
   const [deposits, setDeposits] = useState([]);
@@ -8,18 +8,35 @@ const Deposits = () => {
   useEffect(() => {
     const fetchDeposits = async () => {
       try {
-        // Replace with the actual authenticated user's ID
+        // Replace with the actual authenticated user's ID or obtain from context
         const userId = '11111111-1111-1111-1111-111111111111';
         const response = await fetch(`/api/transactions/${userId}`);
-        const data = await response.json();
-        if (!response.ok) {
-          setError(data.error || 'Failed to load transactions');
-          return;
+
+        // Check if the response content type is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error(`Expected JSON, but received: ${text.slice(0, 100)}...`);
         }
-        // Filter transactions to only include deposits
+
+        // Check for non-OK responses
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to load transactions');
+        }
+
+        const data = await response.json();
+
+        // Ensure the response data has a transactions array
+        if (!data.transactions || !Array.isArray(data.transactions)) {
+          throw new Error('Invalid data format received');
+        }
+
+        // Filter transactions to include only deposits
         const depositData = data.transactions.filter(
           (tx) => tx.transaction_type === 'deposit'
         );
+
         setDeposits(depositData);
       } catch (err) {
         setError(err.message);
@@ -47,10 +64,7 @@ const Deposits = () => {
       ) : (
         <ul className="space-y-3">
           {deposits.map((deposit) => (
-            <li
-              key={deposit.transaction_id}
-              className="border p-3 rounded shadow-sm"
-            >
+            <li key={deposit.transaction_id} className="border p-3 rounded shadow-sm">
               <div className="text-gray-700">
                 <span className="font-medium">Date:</span> {deposit.date || 'N/A'}
               </div>
