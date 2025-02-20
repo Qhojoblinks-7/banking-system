@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
-import Footer from './components/Footer';
 import Analytics from './components/Analytics';
+import LoanApplication from './components/LoanApplication';
 
 
 
@@ -14,6 +14,13 @@ const AccountOverview = lazy(() => import('./components/AccountOverview'));
 const TransactionHistory = lazy(() => import('./components/TransactionHistory'));
 const TransferFunds = lazy(() => import('./components/TransferFunds')); // Import TransferFunds component
 const ErrorBoundary = lazy(() => import('./components/ErrorBoundary'));
+const Deposits = lazy(() => import('./components/Deposits'));
+const Withdrawals = lazy(() => import('./components/Withdrawals'));
+const Settings = lazy(() => import('./components/Settings'));
+const Investments = lazy(() => import('./components/Investments')); 
+const Cards = lazy(() => import('./components/Cards'));
+const BillPayments = lazy(() => import('./components/BillPayments'));
+
 
 const App = () => {
   return (
@@ -66,7 +73,41 @@ const App = () => {
             </ErrorBoundary>
           } 
         />
-         
+        <Route path='/deposits' element={
+          <ErrorBoundary>
+            <Deposits />
+          </ErrorBoundary>
+        } />
+        <Route path='/withdrawals' element={
+          <ErrorBoundary>
+            <Withdrawals />
+          </ErrorBoundary>
+        } />
+        <Route path='/settings' element={
+          <ErrorBoundary>
+            <Settings />
+          </ErrorBoundary>
+        } />
+        <Route path="/investments" element={
+          <ErrorBoundary>
+            <Investments />
+          </ErrorBoundary>
+        } />
+        <Route path="/loanapplication" element={
+          <ErrorBoundary>
+            <LoanApplication />
+          </ErrorBoundary>
+        } />
+        <Route path="/cards" element={
+          <ErrorBoundary>
+            <Cards />
+          </ErrorBoundary>
+        } />
+        <Route path="/bill-payments" element={
+          <ErrorBoundary>
+            <BillPayments />
+          </ErrorBoundary>
+        } />
         
         {/* Add additional routes for analytics, cards, payments, investments, settings etc. if needed */}
       </Routes>

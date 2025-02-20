@@ -22,7 +22,6 @@ import {
   faEyeSlash 
 } from '@fortawesome/free-solid-svg-icons';
 import QuickActions from './QuickActions';
-import MobileSidebar from './MobileSidebar';
 
 const UserDashboard = () => {
   const navigate = useNavigate();

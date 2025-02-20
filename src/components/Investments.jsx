@@ -1,137 +1,126 @@
-import  { useState } from 'react';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-const InvestmentOpportunities = () => {
-  const [activeTab, setActiveTab] = useState('apply');
-  const [alert, setAlert] = useState(null);
+const Investments = () => {
+  const [investments, setInvestments] = useState([]);
+  const [amount, setAmount] = useState("");
+  const [investmentType, setInvestmentType] = useState("Fixed Deposit");
+  const [duration, setDuration] = useState(12); // Default 12 months
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [investmentOptions, setInvestmentOptions] = useState([]);
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    // Clear any existing alert when switching tabs
-    setAlert(null);
-  };
+  useEffect(() => {
+    fetchInvestments();
+    fetchInvestmentOptions();
+  }, []);
 
-  const handleApplySubmit = async (e) => {
-    e.preventDefault();
-
-    // Gather form data using FormData API and convert to a plain object
-    const formData = new FormData(e.target);
-    const payload = Object.fromEntries(formData.entries());
-
+  const fetchInvestments = async () => {
     try {
-      const response = await fetch('/api/apply-investment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAlert(`Error: ${data.error || 'Investment application failed'}`);
-      } else {
-        setAlert('Investment application submitted successfully!');
-        e.target.reset();
-      }
+      const userId = "USER_ID_HERE"; // Replace with actual user ID
+      const response = await axios.get(`/api/investments/${userId}`);
+      setInvestments(response.data.investments || []);
     } catch (error) {
-      setAlert(`Error: ${error.message}`);
+      console.error("Error fetching investments:", error);
     }
   };
 
+  const fetchInvestmentOptions = async () => {
+    try {
+      const response = await axios.get("/api/investment-options");
+      setInvestmentOptions(response.data.options || []);
+    } catch (error) {
+      console.error("Error fetching investment options:", error);
+    }
+  };
+
+  const handleCreateInvestment = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await axios.post("/api/investments", {
+        user_id: "USER_ID_HERE", // Replace with actual user ID
+        amount,
+        investment_type: investmentType,
+        duration,
+      });
+
+      setMessage("Investment Created Successfully!");
+      setAmount("");
+      fetchInvestments();
+    } catch (error) {
+      setMessage("Failed to create investment.");
+    }
+    setLoading(false);
+  };
+
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Investment Opportunities</h1>
-      {alert && (
-        <div className="mb-4 p-3 rounded bg-red-100 text-red-700">
-          {alert}
-        </div>
-      )}
-      <div className="flex border-b border-gray-300 mb-4">
-        <button
-          onClick={() => handleTabChange('apply')}
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'apply'
-              ? 'border-b-2 border-blue-500 text-blue-500'
-              : 'text-gray-600'
-          }`}
-        >
-          Apply for Investment
-        </button>
-        <button
-          onClick={() => handleTabChange('track')}
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'track'
-              ? 'border-b-2 border-blue-500 text-blue-500'
-              : 'text-gray-600'
-          }`}
-        >
-          Track Returns
-        </button>
-      </div>
+    <div className="max-w-4xl mx-auto p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold text-center text-gray-800">Investment Dashboard</h1>
 
-      {activeTab === 'apply' && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Apply for Investment</h2>
-          <form onSubmit={handleApplySubmit} className="space-y-4">
-            <div>
-              <label className="block text-gray-700 mb-1">
-                Investment Amount:
-              </label>
-              <input
-                type="number"
-                name="amount"
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300"
-                placeholder="Enter amount"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 mb-1">
-                Investment Term (months):
-              </label>
-              <input
-                type="number"
-                name="term"
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300"
-                placeholder="Enter term"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 mb-1">Notes:</label>
-              <textarea
-                name="notes"
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300"
-                placeholder="Any additional info"
-              ></textarea>
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Submit Application
-            </button>
-          </form>
-        </div>
-      )}
+      {/* Create Investment Form */}
+      <form className="mt-6 bg-white p-6 rounded-lg shadow-md" onSubmit={handleCreateInvestment}>
+        <h2 className="text-lg font-semibold mb-4">Create Investment</h2>
+        <label className="block text-gray-600">Amount</label>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full p-2 border rounded-md mt-2 mb-4"
+          required
+        />
 
-      {activeTab === 'track' && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Track Investment Returns</h2>
-          {/* Replace the placeholder content below with actual data fetched from your API */}
-          <p className="text-gray-700">
-            Your current investment return is{' '}
-            <span className="font-bold">5.2%</span>.
-          </p>
-          <p className="text-gray-700">
-            Detailed performance data and historical returns will be displayed here.
-          </p>
-          {/* Optionally, integrate a chart or a detailed table of returns */}
+        <label className="block text-gray-600">Investment Type</label>
+        <select
+          value={investmentType}
+          onChange={(e) => setInvestmentType(e.target.value)}
+          className="w-full p-2 border rounded-md mt-2 mb-4"
+        >
+          {investmentOptions.map((option) => (
+            <option key={option.id} value={option.name}>
+              {option.name}
+            </option>
+          ))}
+        </select>
+
+        <label className="block text-gray-600">Duration (Months)</label>
+        <input
+          type="number"
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+          className="w-full p-2 border rounded-md mt-2 mb-4"
+          required
+        />
+
+        <button
+          type="submit"
+          className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 w-full"
+          disabled={loading}
+        >
+          {loading ? "Processing..." : "Create Investment"}
+        </button>
+      </form>
+
+      {message && <p className="mt-4 text-center text-green-500">{message}</p>}
+
+      {/* Investments List */}
+      <h2 className="text-xl font-semibold mt-8 mb-4">My Investments</h2>
+      {investments.length === 0 ? (
+        <p className="text-gray-500">No investments found.</p>
+      ) : (
+        <div className="bg-white p-4 rounded-lg shadow-md">
+          {investments.map((investment) => (
+            <div key={investment.investment_id} className="p-4 border-b last:border-none">
+              <h3 className="text-lg font-semibold">{investment.investment_type}</h3>
+              <p className="text-gray-600">Amount: ${investment.amount}</p>
+              <p className="text-gray-600">Duration: {investment.duration} months</p>
+              <p className="text-gray-600">Status: {investment.status}</p>
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
 };
 
-export default InvestmentOpportunities;
+export default Investments;

@@ -103,7 +103,7 @@ const LoanApplication = () => {
         </div>
         <button 
           type="submit" 
-          className="w-full bg-blue-600 text-white font-semibold rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50"
+          className="w-full bg-emerald-600 text-white font-semibold rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50"
           disabled={loading}
         >
           {loading ? 'Submitting...' : 'Submit Application'}

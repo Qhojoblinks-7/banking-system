@@ -1,110 +1,116 @@
-// BillPayments.js
-import { useState } from 'react';
-import Layout from './Layout'; 
+import { useState } from "react";
+import logo from '../assets/Layer 2.png';
+
+const PaymentCard = ({ title, provider, link }) => (
+  <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow-lg mb-3">
+    <div>
+      <h4 className="font-semibold">{title}</h4>
+      <p className="text-sm text-gray-600">{provider}</p>
+    </div>
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-600"
+    >
+      Pay Now
+    </a>
+  </div>
+);
 
 const BillPayments = () => {
-  const [selectedTab, setSelectedTab] = useState('Utilities');
+  const [selectedTab, setSelectedTab] = useState("Utilities");
 
-  const handleTabClick = (tab) => {
-    setSelectedTab(tab);
-  };
+  const tabs = ["Utilities", "Mobile Recharge", "Credit Card Bills"];
 
   return (
-    <Layout>
-      <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md mx-auto">
-        <h2 className="text-2xl font-bold mb-4">Bill Payments</h2>
-        <div className="mb-4">
-          <button
-            className={`px-4 py-2 ${
-              selectedTab === 'Utilities' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            } rounded-lg`}
-            onClick={() => handleTabClick('Utilities')}
-          >
-            Utilities
-          </button>
-          <button
-            className={`ml-2 px-4 py-2 ${
-              selectedTab === 'Mobile Recharge' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            } rounded-lg`}
-            onClick={() => handleTabClick('Mobile Recharge')}
-          >
-            Mobile Recharge
-          </button>
-          <button
-            className={`ml-2 px-4 py-2 ${
-              selectedTab === 'Credit Card Bills' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            } rounded-lg`}
-            onClick={() => handleTabClick('Credit Card Bills')}
-          >
-            Credit Card Bills
-          </button>
+      <div className="bg-white p-6 mt-6 rounded-lg shadow-2xl max-w-xl mx-auto">
+        <img src={logo} alt="bill payments" className="w-20 h-20 mx-auto" />
+        <h2 className="text-2xl font-bold mb-4 text-center">Bill Payments</h2>
+
+        {/* Tab Navigation */}
+        <div className="flex justify-between bg-gray-200 p-2  rounded-lg mb-4">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setSelectedTab(tab)}
+              className={`flex-1 py-2 rounded-md ${
+                selectedTab === tab
+                  ? "bg-green-600 text-white"
+                  : "bg-green-50 text-gray-700"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
 
-        {selectedTab === 'Utilities' && (
-          <div>
-            <h3 className="text-lg font-bold mb-2">Utilities</h3>
-            <p className="mb-2">
-              Electricity Bill (ECG):{' '}
-              <a
-                href="https://powerapp.ecg.com.gh/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-500 text-white py-1 px-2 rounded"
-              >
-                Pay Now
-              </a>
-            </p>
-            <p className="mb-2">
-              Water Bill (Ghana Water Company):{' '}
-              <a
-                href="https://gwcbilling.com/GWCPortal/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-500 text-white py-1 px-2 rounded"
-              >
-                Pay Now
-              </a>
-            </p>
-            <p className="mb-2">
-              Internet and Cable TV (Vodafone):{' '}
-              <a
-                href="https://vodafone.com.gh"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-500 text-white py-1 px-2 rounded"
-              >
-                Pay Now
-              </a>
-            </p>
-            <p className="mb-2">
-              Telephone Services (Vodafone):{' '}
-              <a
-                href="https://vodafone.com.gh"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-500 text-white py-1 px-2 rounded"
-              >
-                Pay Now
-              </a>
-            </p>
-          </div>
-        )}
+        {/* Tab Content */}
+        <div>
+          {selectedTab === "Utilities" && (
+            <div>
+              <h3 className="text-lg font-bold mb-3">Utilities</h3>
+              <PaymentCard
+                title="Electricity Bill"
+                provider="Electricity Company of Ghana (ECG)"
+                link="https://powerapp.ecg.com.gh/"
+              />
+              <PaymentCard
+                title="Water Bill"
+                provider="Ghana Water Company Limited"
+                link="https://gwcbilling.com/GWCPortal/"
+              />
+              <PaymentCard
+                title="Internet & Cable TV"
+                provider="Vodafone Ghana"
+                link="https://vodafone.com.gh"
+              />
+              <PaymentCard
+                title="Telephone Services"
+                provider="Vodafone Ghana"
+                link="https://vodafone.com.gh"
+              />
+            </div>
+          )}
 
-        {selectedTab === 'Mobile Recharge' && (
-          <div>
-            <h3 className="text-lg font-bold mb-2">Mobile Recharge</h3>
-            {/* Add options for mobile recharge */}
-          </div>
-        )}
+          {selectedTab === "Mobile Recharge" && (
+            <div>
+              <h3 className="text-lg font-bold mb-3">Mobile Recharge</h3>
+              <PaymentCard
+                title="MTN Airtime"
+                provider="MTN Ghana"
+                link="https://mtn.com.gh"
+              />
+              <PaymentCard
+                title="Vodafone Airtime"
+                provider="Vodafone Ghana"
+                link="https://vodafone.com.gh"
+              />
+              <PaymentCard
+                title="AirtelTigo Airtime"
+                provider="AirtelTigo Ghana"
+                link="https://airteltigo.com.gh"
+              />
+            </div>
+          )}
 
-        {selectedTab === 'Credit Card Bills' && (
-          <div>
-            <h3 className="text-lg font-bold mb-2">Credit Card Bills</h3>
-            {/* Add options for credit card bill payments */}
-          </div>
-        )}
+          {selectedTab === "Credit Card Bills" && (
+            <div>
+              <h3 className="text-lg font-bold mb-3">Credit Card Bills</h3>
+              <PaymentCard
+                title="Visa Credit Card"
+                provider="Standard Chartered Ghana"
+                link="https://www.sc.com/gh/"
+              />
+              <PaymentCard
+                title="MasterCard Credit Card"
+                provider="Fidelity Bank Ghana"
+                link="https://www.fidelitybank.com.gh/"
+              />
+            </div>
+          )}
+        </div>
       </div>
-    </Layout>
   );
 };
 

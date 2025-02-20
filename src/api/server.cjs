@@ -1,35 +1,17 @@
+require('dotenv').config({ path: '../.env' });
 const express = require('express');
-const { createClient } = require('@supabase/supabase-js');
+const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv');
 const { Pool } = require('pg');
-
-// Load environment variables in development
-if (process.env.NODE_ENV !== 'production') {
-  dotenv.config();
-}
-
-// Check if environment variables are set
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.JWT_SECRET || !process.env.DATABASE_URL) {
-  console.error('Missing required environment variables');
-  process.exit(1);
-}
-
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = require('./supabaseClient');
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../public')));
 
-// Serve static files from the 'frontend/public' directory
-app.use(express.static('../frontend/public'));
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// Initialize PostgreSQL client using environment variables
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-// Check database connection
 pool.connect((err) => {
   if (err) {
     console.error('Failed to connect to the database:', err);
@@ -39,70 +21,87 @@ pool.connect((err) => {
   }
 });
 
-// JWT secret from environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// -----------------------------------------------------------------
-// JWT Authentication Middleware
-// -----------------------------------------------------------------
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  // Expect header in the format "Bearer <token>"
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Missing token' });
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Invalid token' });
-    req.user = user; // Attach decoded token info to request
+    req.user = user;
     next();
   });
 }
 
-// -----------------------------------------------------------------
-// Test Connection Endpoint
-// -----------------------------------------------------------------
+// Test database connection
 app.get('/api/test-connection', async (req, res) => {
   try {
-    // Query the user_accounts table as a connection test
-    const { data, error } = await supabase
-      .from('user_accounts')
-      .select('*')
-      .limit(1);
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
+    const { data, error } = await supabase.from('user_accounts').select('*').limit(1);
+    if (error) return res.status(400).json({ error: error.message });
     res.json({ message: 'Connection successful', data });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// -----------------------------------------------------------------
-// Login Endpoint (for issuing JWT tokens)
-// -----------------------------------------------------------------
+// Register new user & auto-create related accounts
+app.post('/api/register', async (req, res) => {
+  try {
+    const { full_name, email, phone_number, date_of_birth, residential_address, account_type, username, password } = req.body;
+    
+    // Check if user already exists
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('user_accounts')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) return res.status(400).json({ error: 'User already exists' });
+
+    const password_hash = await bcrypt.hash(password, 10);
+
+    // Insert user into user_accounts table
+    const { data: newUser, error: userError } = await supabase
+      .from('user_accounts')
+      .insert([{ full_name, email, phone_number, date_of_birth, residential_address, account_type, username, password_hash }])
+      .select()
+      .single();
+
+    if (userError) return res.status(400).json({ error: userError.message });
+
+    // Auto-create a bank account for the user
+    const { data: bankAccount, error: bankError } = await supabase
+      .from('bank_accounts')
+      .insert([{ user_id: newUser.user_id, account_type, balance: 0 }])
+      .single();
+
+    if (bankError) return res.status(400).json({ error: bankError.message });
+
+    res.json({ message: 'User registered successfully', user: newUser, bank_account: bankAccount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// User login
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    // Retrieve user by email
+    
     const { data: user, error } = await supabase
       .from('user_accounts')
       .select('*')
       .eq('email', email)
       .single();
-      
-    if (error || !user) {
-      return res.status(400).json({ error: 'Invalid email or password' });
-    }
+    
+    if (error || !user) return res.status(400).json({ error: 'Invalid email or password' });
 
-    // Compare the password with the stored hash
     const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) {
-      return res.status(400).json({ error: 'Invalid email or password' });
-    }
+    if (!match) return res.status(400).json({ error: 'Invalid email or password' });
 
-    // Issue a JWT token (include user_id and email)
-    const tokenPayload = { user_id: user.user_id, email: user.email };
-    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ user_id: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
 
     res.json({ token, user });
   } catch (err) {
@@ -110,160 +109,111 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Protect endpoints below this middleware
 app.use('/api', authenticateToken);
 
-// -----------------------------------------------------------------
-// Registration Endpoint
-// -----------------------------------------------------------------
-app.post('/api/register', async (req, res) => {
-  try {
-    const {
-      full_name,
-      email,
-      phone_number,
-      date_of_birth,
-      residential_address,
-      account_type,
-      username,
-      password,
-    } = req.body;
-
-    // Hash the password with bcrypt
-    const saltRounds = 10;
-    const password_hash = await bcrypt.hash(password, saltRounds);
-
-    // Insert a new user record into user_accounts
-    const { data, error } = await supabase
-      .from('user_accounts')
-      .insert([{
-        full_name,
-        email,
-        phone_number,
-        date_of_birth,
-        residential_address,
-        account_type,
-        username,
-        password_hash,
-      }])
-      .single();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-    res.json({ user: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -----------------------------------------------------------------
-// Create Bank Account Endpoint
-// -----------------------------------------------------------------
-app.post('/api/create-account', async (req, res) => {
-  try {
-    const { user_id, account_type } = req.body;
-
-    const { data, error } = await supabase
-      .from('bank_accounts')
-      .insert([{ user_id, account_type }])
-      .single();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-    res.json({ account: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -----------------------------------------------------------------
-// Create Transaction Endpoint
-// -----------------------------------------------------------------
-app.post('/api/transaction', async (req, res) => {
-  try {
-    const { account_id, transaction_type, amount, description } = req.body;
-
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert([{ account_id, transaction_type, amount, description }])
-      .single();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-    res.json({ transaction: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -----------------------------------------------------------------
-// Atomic Transfer Endpoint using Stored Procedure
-// -----------------------------------------------------------------
-app.post('/api/transfer', async (req, res) => {
-  try {
-    const { from_account, to_account, amount, description } = req.body;
-
-    // Call the stored procedure 'transfer_funds' to perform the atomic transfer.
-    // Make sure you have already created the transfer_funds function in your database.
-    const { data, error } = await supabase
-      .rpc('transfer_funds', {
-        p_from_account: from_account,
-        p_to_account: to_account,
-        p_amount: amount,
-        p_description: description,
-      });
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-    res.json({ transfer: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// -----------------------------------------------------------------
-// Get User Profile Endpoint
-// -----------------------------------------------------------------
+// Get user details
 app.get('/api/user/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabase
+    
+    const { data: user, error } = await supabase
       .from('user_accounts')
       .select('*')
       .eq('user_id', id)
       .single();
 
-    if (error || !data) {
-      // Provide placeholder data if no user data is found
-      return res.status(200).json({
-        user: {
-          user_id: id,
-          full_name: 'New User',
-          email: 'example@example.com',
-          phone_number: 'N/A',
-          date_of_birth: 'N/A',
-          residential_address: 'N/A',
-          account_type: 'N/A',
-          username: 'N/A',
-          balance: 0.00 // Default balance if required
-        }
-      });
-    }
+    if (error) return res.status(400).json({ error: 'User not found' });
 
-    res.json({ user: data });
+    res.json({ user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// -----------------------------------------------------------------
-// Start the Server
-// -----------------------------------------------------------------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`API server is running on port ${PORT}`);
+// Get user balance
+app.get('/api/balance', async (req, res) => {
+  try {
+    const { user_id } = req.user;
+
+    const { data, error } = await supabase
+      .from('bank_accounts')
+      .select('balance')
+      .eq('user_id', user_id)
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.json({ balance: data.balance });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
+// Transfer funds between accounts
+app.post('/api/transfer', async (req, res) => {
+  try {
+    const { from_account, to_account, amount, description } = req.body;
+
+    const { data, error } = await supabase.rpc('transfer_funds', {
+      p_from_account: from_account,
+      p_to_account: to_account,
+      p_amount: amount,
+      p_description: description,
+    });
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.json({ message: 'Transfer successful', transaction: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create investment
+app.post('/api/investments', async (req, res) => {
+  try {
+    const { user_id, amount, investment_type, duration } = req.body;
+
+    if (amount <= 0) return res.status(400).json({ error: 'Amount must be greater than zero' });
+
+    const { data, error } = await supabase
+      .from('investments')
+      .insert([{ user_id, amount, investment_type, duration, status: 'active' }])
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.json({ message: 'Investment created', investment: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Withdraw investment
+app.post('/api/investments/withdraw', async (req, res) => {
+  try {
+    const { investment_id, user_id, amount } = req.body;
+
+    const { data: investment, error } = await supabase
+      .from('investments')
+      .select('*')
+      .eq('investment_id', investment_id)
+      .eq('user_id', user_id)
+      .single();
+
+    if (error || !investment) return res.status(400).json({ error: 'Investment not found' });
+
+    if (investment.amount < amount) return res.status(400).json({ error: 'Insufficient investment balance' });
+
+    const newAmount = investment.amount - amount;
+
+    await supabase.from('investments').update({ amount: newAmount }).eq('investment_id', investment_id);
+
+    res.json({ message: 'Withdrawal successful', remaining_balance: newAmount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`API server is running on port ${PORT}`));

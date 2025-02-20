@@ -1,98 +1,208 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { FaUniversity, FaRegCreditCard, FaMobileAlt } from "react-icons/fa";
+import logo from "../assets/Layer 2.png";
+
+// Mock bank options
+const banks = [
+  { id: "boa", name: "Bank of Africa" },
+  { id: "gtb", name: "GTBank" },
+  { id: "ecobank", name: "Ecobank" },
+];
 
 const TransferFunds = () => {
-  const navigate = useNavigate();
-  
-  const [amount, setAmount] = useState('');
-  const [recipient, setRecipient] = useState('');
-  const [transactionStatus, setTransactionStatus] = useState('');
+  // Form State
+  const [recipientName, setRecipientName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [bank, setBank] = useState("");
+  const [amount, setAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [otp, setOtp] = useState("");
+  const [showOtpModal, setShowOtpModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [transactionStatus, setTransactionStatus] = useState("");
 
-  const handleTransfer = async (e) => {
-    e.preventDefault();
-    setError('');
-    setTransactionStatus('');
-
-    if (!recipient.match(/^\d+$/)) {
-      setError('Recipient account must contain only numbers.');
-      return;
+  // Validate form fields
+  const validateForm = () => {
+    if (!recipientName.trim()) {
+      setError("Recipient name is required.");
+      return false;
     }
-    if (amount <= 0) {
-      setError('Amount must be greater than zero.');
+    if (!accountNumber.match(/^\d{10}$/)) {
+      setError("Account number must be 10 digits.");
+      return false;
+    }
+    if (!bank) {
+      setError("Please select a bank.");
+      return false;
+    }
+    if (parseFloat(amount) <= 0) {
+      setError("Amount must be greater than zero.");
+      return false;
+    }
+    return true;
+  };
+
+  // Handle form submission
+  const handleTransfer = (e) => {
+    e.preventDefault();
+    setError("");
+    setTransactionStatus("");
+
+    if (!validateForm()) return;
+
+    setShowOtpModal(true); // Show OTP modal for verification
+  };
+
+  // Handle OTP Submission
+  const confirmTransfer = async () => {
+    if (otp.length !== 6) {
+      setError("Invalid OTP. Must be 6 digits.");
       return;
     }
 
     setLoading(true);
-    setTransactionStatus('Processing...');
+    setTransactionStatus("Processing transaction...");
 
     try {
-      const response = await fetch('/api/transfer', {
-        method: 'POST',
-        body: JSON.stringify({ recipient, amount }),
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/transfer", {
+        method: "POST",
+        body: JSON.stringify({ recipientName, accountNumber, bank, amount, paymentMethod, otp }),
+        headers: { "Content-Type": "application/json" },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to process transaction');
-      }
+      if (!response.ok) throw new Error("Transaction failed");
 
       const data = await response.json();
       if (data.success) {
-        setTransactionStatus('Transfer successful');
-        setTimeout(() => navigate('/transaction-history'), 2000);
+        setTransactionStatus("Transfer Successful ✅");
       } else {
-        setError('Transfer failed. Please try again.');
+        setError("Transfer failed. Please try again.");
       }
-    } catch (error) {
-      setError('Error processing transaction. Try again later.');
-      console.error('Transfer error:', error);
+    } catch (err) {
+      setError("Error processing transaction.");
     } finally {
       setLoading(false);
+      setShowOtpModal(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-sky-50">
-      <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-4 text-center">Transfer Funds</h2>
-        
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="max-w-lg w-full bg-white p-6 rounded-lg shadow-lg">
+      <img src={logo}alt="transfer" className="w-20 h-20 mx-auto" />
+        <h2 className="text-2xl font-semibold text-center mb-4 text-gray-800">
+          Transfer Funds
+        </h2>
+
+        {/* Error or Success Messages */}
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         {transactionStatus && <p className="text-green-500 text-sm text-center">{transactionStatus}</p>}
 
+        {/* Transfer Form */}
         <form onSubmit={handleTransfer} className="space-y-4">
-          <div className="flex flex-col">
-            <label className="text-gray-600">Recipient Account Number</label>
+          {/* Recipient Name */}
+          <div>
+            <label className="block text-gray-700 font-medium">Recipient’s Name</label>
             <input
               type="text"
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-              className="p-2 border rounded-md"
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-gray-600">Amount</label>
+          {/* Account Number */}
+          <div>
+            <label className="block text-gray-700 font-medium">Account Number</label>
+            <input
+              type="text"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+              maxLength="10"
+              required
+            />
+          </div>
+
+          {/* Bank Selection */}
+          <div>
+            <label className="block text-gray-700 font-medium">Select Bank</label>
+            <select
+              value={bank}
+              onChange={(e) => setBank(e.target.value)}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">-- Choose Bank --</option>
+              {banks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Amount Field */}
+          <div>
+            <label className="block text-gray-700 font-medium">Amount (GHS)</label>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="p-2 border rounded-md"
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+              min="1"
               required
             />
           </div>
 
-          <div className="flex justify-between items-center">
+          {/* Payment Method Options */}
+          <label className="block font-medium">Payment Method</label>
+          <div className="flex gap-3 mt-2 mb-3">
             <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-400"
-              disabled={loading}
+              type="button"
+              onClick={() => setPaymentMethod("bank_transfer")}
+              className={`flex items-center gap-2 p-2 border rounded-md transition duration-200 ${
+                paymentMethod === "bank_transfer"
+                  ? "bg-green-600 text-white"
+                  : "bg-sky-200 text-gray-700 hover:bg-gray-300"
+              }`}
             >
-              {loading ? 'Processing...' : 'Transfer'}
+              <FaUniversity /> Bank Transfer
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("credit_card")}
+              className={`flex items-center gap-2 p-2 border rounded-md transition duration-200 ${
+                paymentMethod === "credit_card"
+                  ? "bg-green-600 text-white"
+                  : "bg-sky-300 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              <FaRegCreditCard /> Credit Card
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("mobile_money")}
+              className={`flex items-center gap-2 p-2 border rounded-md transition duration-200 ${
+                paymentMethod === "mobile_money"
+                  ? "bg-green-600 text-white"
+                  : "bg-sky-300 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              <FaMobileAlt /> Mobile Money
             </button>
           </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full py-2 text-white bg-green-600 rounded-md hover:bg-green-400 transition disabled:bg-gray-400"
+            disabled={loading}
+          >
+            {loading ? "Processing..." : "Send Money"}
+          </button>
         </form>
       </div>
     </div>
