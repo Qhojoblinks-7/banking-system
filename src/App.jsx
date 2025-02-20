@@ -20,6 +20,7 @@ const Settings = lazy(() => import('./components/Settings'));
 const Investments = lazy(() => import('./components/Investments')); 
 const Cards = lazy(() => import('./components/cards/Cards'));
 const BillPayments = lazy(() => import('./components/BillPayments'));
+const OTPVerification = lazy(() => import('./components/OTPVerification'));
 
 
 const App = () => {
@@ -86,6 +87,11 @@ const App = () => {
         <Route path='/settings' element={
           <ErrorBoundary>
             <Settings />
+          </ErrorBoundary>
+        } />
+        <Route path="/verify-otp" element={
+          <ErrorBoundary>
+            <OTPVerification />
           </ErrorBoundary>
         } />
         <Route path="/investments" element={
