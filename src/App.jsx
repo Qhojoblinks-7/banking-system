@@ -18,7 +18,7 @@ const Deposits = lazy(() => import('./components/Deposits'));
 const Withdrawals = lazy(() => import('./components/Withdrawals'));
 const Settings = lazy(() => import('./components/Settings'));
 const Investments = lazy(() => import('./components/Investments')); 
-const Cards = lazy(() => import('./components/Cards'));
+const Cards = lazy(() => import('./components/cards/Cards'));
 const BillPayments = lazy(() => import('./components/BillPayments'));
 
 
