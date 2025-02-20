@@ -6,41 +6,36 @@ import Layout from './Layout';
 const AccountOverview = () => {
   const [user, setUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Example of fetching user data
     const fetchData = async () => {
-      // Replace with actual API call or data fetching logic
-      const userData = {
-        name: 'John Doe',
-        accountNumber: '123456789012345',
-        accounts: [
-          {
-            type: 'Savings Account',
-            id: '987654321',
-            balance: '₵10,000',
+      try {
+        setLoading(true);
+        
+        // Replace with your actual API endpoint
+        const response = await fetch('https://your-api.com/api/user/accounts', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`, // Include token if required
           },
-          {
-            type: 'Fixed Deposit Account',
-            id: '876543210',
-            balance: '₵5,000',
-          },
-          {
-            type: 'Business Account',
-            id: '765432109',
-            balance: '₵15,000',
-          },
-          {
-            type: 'Current Account',
-            id: '654321098',
-            balance: '₵7,500',
-          },
-        ],
-      };
+        });
 
-      setUser(userData);
-      setAccounts(userData.accounts);
+        if (!response.ok) {
+          throw new Error('Failed to fetch account data');
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+        setAccounts(userData.accounts);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -50,8 +45,16 @@ const AccountOverview = () => {
     navigate(path);
   };
 
+  if (loading) {
+    return <div className="text-center">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center">Error: {error}</div>;
+  }
+
   if (!user) {
-    return <div>Loading...</div>;
+    return <div className="text-center">No user data available</div>;
   }
 
   return (
@@ -67,9 +70,11 @@ const AccountOverview = () => {
 
         <div className="mt-4 text-left">
           <h3 className="text-lg font-bold mb-2">Accounts</h3>
-          {accounts.map((account) => (
-            <AccountInfo key={account.id} account={account} />
-          ))}
+          {accounts.length > 0 ? (
+            accounts.map((account) => <AccountInfo key={account.id} account={account} />)
+          ) : (
+            <p>No accounts found.</p>
+          )}
         </div>
       </div>
     </Layout>
