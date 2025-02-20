@@ -1,82 +1,63 @@
-import { useState } from "react";
+// OTPVerification.jsx
+import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
+import Overlay from "./Overlay";
 
-const OTPVerification = ({ email, onSuccess }) => {
-  const [otp, setOtp] = useState("");
-  const [message, setMessage] = useState("");
-  const [resendMessage, setResendMessage] = useState("");
-  const [isResending, setIsResending] = useState(false);
+/**
+ * OTPVerification Component
+ * 
+ * Instead of displaying a form to enter a 6-digit OTP, this component shows a processing overlay
+ * while it periodically polls Supabase for an active session (i.e. the user has clicked the verification link).
+ * Once the session is detected, it calls the onSuccess callback.
+ * 
+ * @param {Object} props - Component props
+ * @param {function} props.onSuccess - Callback function to call upon successful verification
+ */
+const OTPVerification = ({ onSuccess }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const verifyOTP = async () => {
-    try {
-      const response = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, otp }),
-      });
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        // Get the current auth session from Supabase
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          setError(error.message);
+          setLoading(false);
+          return;
+        }
+        if (data?.session) {
+          // Session exists: user is verified
+          setLoading(false);
+          onSuccess(data.session);
+        } else {
+          // No session yet; poll again in 2 seconds
+          setTimeout(checkSession, 2000);
+        }
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
 
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error);
-
-      setMessage("OTP verified successfully!");
-      onSuccess(data); // Proceed to the next step after OTP verification
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-    }
-  };
-
-  const resendOTP = async () => {
-    setIsResending(true);
-    try {
-      const response = await fetch('/api/resend-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error);
-
-      setResendMessage("OTP resent successfully!");
-    } catch (error) {
-      setResendMessage(`Error: ${error.message}`);
-    } finally {
-      setIsResending(false);
-    }
-  };
+    checkSession();
+  }, [onSuccess]);
 
   return (
-    <div className="p-4 bg-white shadow-md rounded">
-      <h2 className="text-lg font-semibold">Verify Your Email</h2>
-      <p className="text-gray-600">Enter the OTP sent to {email}</p>
-      <input
-        type="text"
-        placeholder="Enter OTP"
-        value={otp}
-        onChange={(e) => setOtp(e.target.value)}
-        className="border p-2 w-full rounded mt-2"
-      />
-      <button
-        onClick={verifyOTP}
-        className="bg-green-600 text-white p-2 rounded w-full mt-2"
-      >
-        Verify OTP
-      </button>
-      {message && <p className="text-red-500 mt-2">{message}</p>}
-      <button
-        onClick={resendOTP}
-        className="bg-blue-600 text-white p-2 rounded w-full mt-2"
-        disabled={isResending}
-      >
-        {isResending ? "Resending..." : "Resend OTP"}
-      </button>
-      {resendMessage && <p className="text-red-500 mt-2">{resendMessage}</p>}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-sky-100 p-4">
+      {/* Show overlay while loading */}
+      <Overlay visible={loading} />
+      {!loading && error && (
+        <p className="text-red-500 text-center mt-4" role="alert">
+          Error: {error}
+        </p>
+      )}
+      {!loading && !error && (
+        <p className="text-green-600 text-center mt-4 text-xl">
+          Verification complete. Redirecting...
+        </p>
+      )}
     </div>
   );
 };
