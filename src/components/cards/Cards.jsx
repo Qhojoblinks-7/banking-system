@@ -1,30 +1,43 @@
-import React from "react";
+import { useState } from "react";
 import FlipCard from "./FlipCard";
+import CardForm from "./CardForm";
 
-const cardData = [
+const initialCards = [
   {
-    title: "Tech Innovations",
-    description: "Explore the latest in technology.",
-    image: "https://source.unsplash.com/300x200/?technology",
+    bank: "Visa",
+    cardNumber: "**** **** **** 1234",
+    holderName: "John Doe",
+    expiry: "12/27",
+    cvv: "123",
   },
   {
-    title: "Nature Beauty",
-    description: "Discover the wonders of nature.",
-    image: "https://source.unsplash.com/300x200/?nature",
-  },
-  {
-    title: "Space Exploration",
-    description: "Dive into the cosmos and beyond.",
-    image: "https://source.unsplash.com/300x200/?space",
+    bank: "MasterCard",
+    cardNumber: "**** **** **** 5678",
+    holderName: "Alice Brown",
+    expiry: "06/25",
+    cvv: "456",
   },
 ];
 
-const Card = () => {
+const Card= () => {
+  const [cards, setCards] = useState(initialCards);
+
+  const addCard = (newCard) => {
+    setCards([...cards, newCard]);
+  };
+
+  const deleteCard = (index) => {
+    setCards(cards.filter((_, i) => i !== index));
+  };
+
   return (
-    <div className="flex flex-wrap justify-center gap-8 py-10 animate-fadeIn">
-      {cardData.map((card, index) => (
-        <FlipCard key={index} {...card} />
-      ))}
+    <div className="flex flex-col items-center py-10">
+      <CardForm addCard={addCard} />
+      <div className="flex flex-wrap justify-center gap-8 mt-8">
+        {cards.map((card, index) => (
+          <FlipCard key={index} {...card} onDelete={() => deleteCard(index)} />
+        ))}
+      </div>
     </div>
   );
 };

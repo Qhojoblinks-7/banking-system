@@ -1,31 +1,45 @@
-import React from "react";
+import  { useState } from "react";
+import visaLogo from '../../assets/Layer 2.png';
+import masterCardLogo from "../../assets/Layer 4.png";
 
-const FlipCard = ({ title, description, image }) => {
+const bankLogos = {
+  Visa: visaLogo,
+  MasterCard: masterCardLogo,
+};
+
+const FlipCard = ({ bank, cardNumber, holderName, expiry, cvv, onDelete }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+
   return (
-    <div className="group [perspective:1000px] w-72 h-96">
-      <div className="relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
-        
-        {/* Front Side */}
-        <div className="absolute inset-0 bg-white shadow-lg rounded-lg flex flex-col items-center justify-center text-center p-4 [backface-visibility:hidden]">
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-40 object-cover rounded-t-lg"
-          />
-          <h2 className="text-xl font-bold mt-4">{title}</h2>
-          <p className="text-gray-500 mt-2">{description}</p>
+    <div
+      className="relative w-80 h-48 cursor-pointer group"
+      onClick={() => setIsFlipped(!isFlipped)}
+    >
+      <div
+        className={`w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl shadow-lg transition-transform duration-500 ${
+          isFlipped ? "rotate-y-180" : ""
+        }`}
+      >
+        <div className="absolute inset-0 flex flex-col justify-between p-4">
+          <img src={bankLogos[bank]} alt={bank} className="w-16 h-auto" />
+          <div className="text-lg font-bold">{cardNumber}</div>
+          <div className="flex justify-between text-sm">
+            <span>{holderName}</span>
+            <span>{expiry}</span>
+          </div>
         </div>
-
-        {/* Back Side */}
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-lg rounded-lg flex flex-col items-center justify-center text-center p-4 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-          <h2 className="text-xl font-bold">{title}</h2>
-          <p className="mt-2">More exciting details here!</p>
-          <button className="mt-4 px-4 py-2 bg-white text-purple-600 font-semibold rounded-lg shadow-md hover:bg-gray-200 transition-all">
-            Learn More
-          </button>
+        <div
+          className="absolute inset-0 flex justify-center items-center bg-black text-white rounded-xl transform rotate-y-180 backface-hidden"
+        >
+          <div className="text-lg">CVV: {cvv}</div>
         </div>
-
       </div>
+      <button
+        onClick={onDelete}
+        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+      >
+        ❌
+      </button>
     </div>
   );
 };
