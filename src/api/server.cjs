@@ -72,7 +72,44 @@ app.post('/api/register', async (req, res) => {
 
     if (bankError) return res.status(400).json({ error: bankError.message });
 
-    res.json({ message: '✅ User registered successfully', user: newUser, bank_account: bankAccount });
+    // Send OTP to user's email
+    const { error: otpError } = await supabase.auth.api.sendMagicLinkEmail(email);
+    if (otpError) return res.status(400).json({ error: otpError.message });
+
+    res.json({ message: '✅ User registered successfully. Please verify your email.', user: newUser, bank_account: bankAccount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 📌 Verify OTP
+app.post('/api/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: "email",
+    });
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.json({ message: '✅ OTP verified successfully', data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 📌 Resend OTP
+app.post('/api/resend-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Send OTP to user's email
+    const { error: otpError } = await supabase.auth.api.sendMagicLinkEmail(email);
+    if (otpError) return res.status(400).json({ error: otpError.message });
+
+    res.json({ message: '✅ OTP resent successfully.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
