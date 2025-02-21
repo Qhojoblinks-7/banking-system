@@ -11,11 +11,14 @@ export const UserProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
   const [loading, setLoading] = useState(true);
   const [inactiveTime, setInactiveTime] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+  const [totalExpenditure, setTotalExpenditure] = useState(0);
 
   // Fetch user details when the access token is available
   useEffect(() => {
     if (accessToken) {
       fetchUserData();
+      fetchTransactions();
     }
     setLoading(false);
   }, [accessToken]);
@@ -61,6 +64,20 @@ export const UserProvider = ({ children }) => {
     } catch (error) {
       console.error("Error fetching user:", error);
       refreshAccessToken();
+    }
+  };
+
+  // Fetch transactions data from API
+  const fetchTransactions = async () => {
+    try {
+      const response = await axios.get("/api/transactions", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      setTransactions(response.data.transactions || []);
+      const expenditure = response.data.transactions.reduce((total, tx) => total + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0);
+      setTotalExpenditure(expenditure);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
     }
   };
 
@@ -121,6 +138,8 @@ export const UserProvider = ({ children }) => {
         fetchUserData,
         refreshAccessToken,
         loading,
+        transactions,
+        totalExpenditure,
       }}
     >
       {children}

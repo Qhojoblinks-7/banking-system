@@ -8,7 +8,9 @@ const TransactionsOverview = () => {
       {/* Total Expenditure Card */}
       <div className="bg-white p-6 rounded-lg shadow-md text-center">
         <h3 className="text-lg font-bold text-gray-700">Total Expenditure</h3>
-        <p className="text-3xl font-semibold text-red-600">₵{totalExpenditure.toFixed(2)}</p>
+        <p className="text-3xl font-semibold text-red-600">
+          {totalExpenditure !== undefined ? `₵${totalExpenditure.toFixed(2)}` : '₵0.00'}
+        </p>
       </div>
 
       {/* Transactions Table */}

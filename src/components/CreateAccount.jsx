@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../components/UserContext"; // Import global user context
 import logo from "../assets/Layer 2.png";
 import OTPVerification from "./OTPVerification";
-import { supabase } from "../supabaseClient"; // Use Supabase client directly
+import { supabase } from "../supabaseClient";
 
 // Multi-step form configuration for sign-up
 const stepsConfig = [
@@ -19,9 +19,13 @@ const stepsConfig = [
 ];
 
 const CreateAccount = () => {
-  const { login } = useUser(); // Access global login function from context
+  const { login } = useUser(); // Use global login function from context
   const navigate = useNavigate();
+  
+  // Toggle between Sign Up and Sign In forms
   const [isSignup, setIsSignup] = useState(true);
+  
+  // Multi-step form state for registration
   const [currentStep, setCurrentStep] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [alert, setAlert] = useState({ message: "", classes: "", visible: false });
@@ -36,64 +40,32 @@ const CreateAccount = () => {
     password: "",
     confirm_password: "",
   });
+  
+  // State to handle OTP verification
   const [isOtpVerification, setIsOtpVerification] = useState(false);
-
-  // Retrieve reCAPTCHA site key from environment variables
-  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_API_KEY;
-
-  // Dynamically load the reCAPTCHA script if not already loaded
-  useEffect(() => {
-    if (!window.grecaptcha) {
-      const script = document.createElement("script");
-      script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        console.log("reCAPTCHA script loaded");
-      };
-      script.onerror = () => {
-        console.error("Failed to load reCAPTCHA script");
-      };
-      document.body.appendChild(script);
-    }
-  }, [recaptchaSiteKey]);
-
-  // Helper function to get a reCAPTCHA token
-  const getCaptchaToken = () => {
-    return new Promise((resolve, reject) => {
-      if (!window.grecaptcha) {
-        return reject(new Error("reCAPTCHA not loaded"));
-      }
-      // Use grecaptcha.ready to ensure reCAPTCHA is ready
-      if (typeof window.grecaptcha.ready === "function") {
-        window.grecaptcha.ready(() => {
-          window.grecaptcha
-            .execute(recaptchaSiteKey, { action: "signup" })
-            .then(resolve)
-            .catch(reject);
-        });
-      } else if (typeof window.grecaptcha.execute === "function") {
-        window.grecaptcha
-          .execute(recaptchaSiteKey, { action: "signup" })
-          .then(resolve)
-          .catch(reject);
-      } else {
-        reject(new Error("reCAPTCHA is not properly loaded"));
-      }
-    });
+  
+  // Login form state (for the sign-in view)
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  
+  // Handle input changes for registration form
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
-  // Handle input changes
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
+  
+  // Handle input changes for login form
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    setLoginData((prev) => ({ ...prev, [name]: value }));
+  };
+  
   // Show alert messages for 5 seconds
   const showAlert = (message, classes) => {
     setAlert({ message, classes, visible: true });
     setTimeout(() => setAlert({ message: "", classes: "", visible: false }), 5000);
   };
-
-  // Validate current step
+  
+  // Validate the current step's field
   const validateStep = () => {
     const currentField = stepsConfig[currentStep];
     if (!formData[currentField.name]) {
@@ -102,16 +74,22 @@ const CreateAccount = () => {
     }
     return true;
   };
-
-  // Handle navigation between steps
+  
+  // Navigate to the next step
   const handleNext = () => {
-    if (validateStep()) setCurrentStep((prev) => prev + 1);
+    if (validateStep() && currentStep < stepsConfig.length - 1) {
+      setCurrentStep((prev) => prev + 1);
+    }
   };
+  
+  // Navigate to the previous step
   const handlePrev = () => {
-    if (currentStep > 0) setCurrentStep((prev) => prev - 1);
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+    }
   };
-
-  // Submit Registration using Supabase client with reCAPTCHA
+  
+  // Handle registration submission (Sign Up)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirm_password) {
@@ -120,41 +98,71 @@ const CreateAccount = () => {
     }
     setProcessing(true);
     try {
-      const captchaToken = await getCaptchaToken();
-      const { data, error } = await supabase.auth.signUp(
-        {
-          email: formData.email,
-          password: formData.password,
-        },
-        {
-          data: {
+      // Insert new user record into Supabase (ensure your table "user_accounts" exists)
+      const { error, data } = await supabase
+        .from("user_accounts")
+        .insert([
+          {
             full_name: formData.full_name,
+            email: formData.email,
             phone_number: formData.phone_number,
             date_of_birth: formData.date_of_birth,
             residential_address: formData.residential_address,
             account_type: formData.account_type,
             username: formData.username,
+            password: formData.password, // In production, ensure this is securely hashed on the backend
           },
-          captchaToken, // Pass the reCAPTCHA token to Supabase
-        }
-      );
-      if (error) {
-        console.error("Supabase signUp error:", error);
-        showAlert(`Error: ${error.message}`, "bg-red-100 text-red-700");
-      } else {
-        showAlert("Registration successful! Please verify your email.", "bg-green-100 text-green-700");
-        setIsOtpVerification(true);
-        // Optionally, automatically log in the user after verification:
-        // await login(formData.email, formData.password);
-      }
-    } catch (err) {
-      console.error("Registration error:", err);
-      showAlert(`Error: ${err.message || "Registration failed."}`, "bg-red-100 text-red-700");
+        ])
+        .single();
+      if (error) throw error;
+  
+      showAlert("Registration successful! Please verify your email.", "bg-green-100 text-green-700");
+      setIsOtpVerification(true);
+    } catch (error) {
+      console.error("Registration error:", error);
+      showAlert(`Error: ${error.message}`, "bg-red-100 text-red-700");
     } finally {
       setProcessing(false);
     }
   };
-
+  
+  // Handle login submission (Sign In)
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setProcessing(true);
+    try {
+      const { data, error } = await supabase
+        .from("user_accounts")
+        .select("*")
+        .eq("username", loginData.username)
+        .eq("password", loginData.password)
+        .single();
+      if (error || !data) {
+        showAlert("Invalid username or password.", "bg-red-100 text-red-700");
+      } else {
+        showAlert("Login successful! Redirecting...", "bg-green-100 text-green-700");
+        setTimeout(() => {
+          navigate("/user-account-overview", { state: { user: data } });
+        }, 2000);
+      }
+    } catch (error) {
+      showAlert(`Error: ${error.message}`, "bg-red-100 text-red-700");
+    } finally {
+      setProcessing(false);
+    }
+  };
+  
+  // Toggle between Sign Up and Sign In forms
+  const toggleForm = () => setIsSignup((prev) => !prev);
+  
+  // Handle OTP verification success
+  const handleOtpSuccess = (data) => {
+    showAlert("OTP verified successfully! Redirecting...", "bg-green-100 text-green-700");
+    setTimeout(() => {
+      navigate("/user-account-overview", { state: { user: data } });
+    }, 2000);
+  };
+  
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-sky-50 font-sans p-4 relative">
       {processing && (
@@ -163,85 +171,159 @@ const CreateAccount = () => {
         </div>
       )}
       {isOtpVerification ? (
-        <OTPVerification email={formData.email} onSuccess={() => navigate("/user-account-overview")} />
-      ) : isSignup ? (
-        <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
-          <div className="mb-4 text-center">
-            <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
-            <h1 className="text-2xl font-bold text-gray-800">Create Account</h1>
-          </div>
-          {alert.visible && (
-            <div className={`mt-4 p-3 rounded text-center ${alert.classes}`}>
-              {alert.message}
+        <OTPVerification email={formData.email} onSuccess={handleOtpSuccess} />
+      ) : (
+        <>
+          {isSignup ? (
+            <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
+              <div className="mb-4 text-center">
+                <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
+                <h1 className="text-2xl font-bold text-gray-800">Create Account</h1>
+              </div>
+              {alert.visible && (
+                <div className={`mt-4 p-3 rounded text-center ${alert.classes}`}>
+                  {alert.message}
+                </div>
+              )}
+              {/* Progress Bar */}
+              <div className="mb-4">
+                <div className="bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-1 bg-gradient-to-r from-blue-400 via-blue-300 to-green-400"
+                    style={{ width: `${((currentStep + 1) / stepsConfig.length) * 100}%`, transition: "width 0.5s ease-in-out" }}
+                  ></div>
+                </div>
+              </div>
+              {/* Registration Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {stepsConfig.map((step, index) => (
+                  <div key={step.id} className={index === currentStep ? "" : "hidden"}>
+                    <label htmlFor={step.id} className="block text-gray-700 font-medium mb-1">
+                      {step.label}:
+                    </label>
+                    {step.type !== "select" ? (
+                      <input
+                        type={step.type}
+                        id={step.id}
+                        name={step.name}
+                        value={formData[step.name]}
+                        onChange={handleChange}
+                        placeholder={step.placeholder || ""}
+                        required
+                        className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
+                      />
+                    ) : (
+                      <select
+                        id={step.id}
+                        name={step.name}
+                        value={formData[step.name]}
+                        onChange={handleChange}
+                        required
+                        className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
+                      >
+                        {step.options.map((option, idx) => (
+                          <option key={idx} value={option} disabled={option === ""}>
+                            {option === "" ? "Select your account type" : option}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                ))}
+                <div className="flex space-x-2">
+                  {currentStep > 0 && (
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      className="bg-gray-500 text-white font-semibold rounded px-4 py-2 hover:bg-gray-600"
+                    >
+                      Previous
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
+                  >
+                    Next
+                  </button>
+                  {currentStep === stepsConfig.length - 1 && (
+                    <button
+                      type="submit"
+                      className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
+                    >
+                      Create Account
+                    </button>
+                  )}
+                </div>
+              </form>
+              <p className="text-center text-gray-600 mt-4">
+                Already have an account?{" "}
+                <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
+                  Sign In
+                </button>
+              </p>
             </div>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {stepsConfig.map((step, index) => (
-              <div key={step.id} className={index === currentStep ? "" : "hidden"}>
-                <label htmlFor={step.id} className="block text-gray-700 font-medium mb-1">
-                  {step.label}:
-                </label>
-                {step.type !== "select" ? (
+          ) : (
+            <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
+              <div className="mb-4 text-center">
+                <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
+                <h1 className="text-2xl font-bold text-gray-800">Sign In</h1>
+              </div>
+              {alert.visible && (
+                <div className={`mt-4 p-3 rounded text-center ${alert.classes}`}>
+                  {alert.message}
+                </div>
+              )}
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label htmlFor="loginUsername" className="block text-gray-700 font-medium mb-1">
+                    Username:
+                  </label>
                   <input
-                    type={step.type}
-                    id={step.id}
-                    name={step.name}
-                    value={formData[step.name]}
-                    onChange={handleChange}
-                    placeholder={step.placeholder || ""}
+                    type="text"
+                    id="loginUsername"
+                    name="username"
+                    value={loginData.username}
+                    onChange={handleLoginChange}
+                    placeholder="johndoe"
                     required
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
                   />
-                ) : (
-                  <select
-                    id={step.id}
-                    name={step.name}
-                    value={formData[step.name]}
-                    onChange={handleChange}
+                </div>
+                <div>
+                  <label htmlFor="loginPassword" className="block text-gray-700 font-medium mb-1">
+                    Password:
+                  </label>
+                  <input
+                    type="password"
+                    id="loginPassword"
+                    name="password"
+                    value={loginData.password}
+                    onChange={handleLoginChange}
+                    placeholder="••••••••"
                     required
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    type="submit"
+                    className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
                   >
-                    {step.options.map((option, idx) => (
-                      <option key={idx} value={option} disabled={option === ""}>
-                        {option === "" ? "Select your account type" : option}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            ))}
-            <div className="flex space-x-2">
-              {currentStep > 0 && (
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  className="bg-gray-500 text-white font-semibold rounded px-4 py-2 hover:bg-gray-600"
-                >
-                  Previous
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={handleNext}
-                className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
-              >
-                Next
-              </button>
-              {currentStep === stepsConfig.length - 1 && (
-                <button
-                  type="submit"
-                  className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
-                >
+                    Login
+                  </button>
+                </div>
+              </form>
+              <p className="text-center text-gray-600 mt-4">
+                Don't have an account?{" "}
+                <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
                   Create Account
                 </button>
-              )}
+              </p>
             </div>
-          </form>
-        </div>
-      ) : (
-        <button onClick={() => setIsSignup(true)} className="text-green-700 font-semibold hover:underline">
-          Create Account
-        </button>
+          )}
+        </>
       )}
     </div>
   );
