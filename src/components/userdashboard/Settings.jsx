@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useUser } from "../components/UserContext"; // Import global user context
+import { useData } from "../context/DataContext"; // Use global DataContext
+// You can also import any additional utilities as needed
 
 const Settings = () => {
-  const { user, token, updateUser, toggleTheme } = useUser(); // Access global user state
+  const { user, token, updateUser, toggleTheme } = useData(); // Access global user state and functions
   const [alert, setAlert] = useState(null);
   const [profile, setProfile] = useState({
     name: user?.name || "",
@@ -52,7 +53,7 @@ const Settings = () => {
   const handleNotificationsToggle = (e) => {
     const updatedNotifications = { ...notifications, [e.target.name]: e.target.checked };
     setNotifications(updatedNotifications);
-    updateUser({ ...user, notifications: updatedNotifications }); // Update in global state
+    updateUser({ ...user, notifications: updatedNotifications }); // Update global state
   };
 
   const handleSecurityQuestionsSubmit = async (e) => {
@@ -67,7 +68,7 @@ const Settings = () => {
       if (!response.ok) throw new Error(data.error || "Security questions update failed");
 
       setAlert({ type: "success", message: "Security questions updated successfully" });
-      updateUser({ ...user, securityQuestions }); // Update in global state
+      updateUser({ ...user, securityQuestions }); // Update global state
     } catch (error) {
       setAlert({ type: "error", message: error.message });
     }
@@ -85,17 +86,57 @@ const Settings = () => {
       {/* Profile Update Form */}
       <form onSubmit={handleProfileSubmit} className="space-y-4">
         <h2 className="text-xl font-semibold">Profile Settings</h2>
-        <input type="text" name="name" placeholder="Name" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="w-full border px-3 py-2 rounded" required />
-        <input type="email" name="email" placeholder="Email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} className="w-full border px-3 py-2 rounded" required />
-        <input type="tel" name="phone" placeholder="Phone Number" value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} className="w-full border px-3 py-2 rounded" required />
+        <input
+          type="text"
+          name="name"
+          placeholder="Name"
+          value={profile.name}
+          onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={profile.email}
+          onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+        <input
+          type="tel"
+          name="phone"
+          placeholder="Phone Number"
+          value={profile.phone}
+          onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
         <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">Save Profile</button>
       </form>
 
       {/* Password Change Form */}
       <form onSubmit={handlePasswordSubmit} className="mt-6 space-y-4">
         <h2 className="text-xl font-semibold">Change Password</h2>
-        <input type="password" name="current" placeholder="Current Password" value={password.current} onChange={(e) => setPassword({ ...password, current: e.target.value })} className="w-full border px-3 py-2 rounded" required />
-        <input type="password" name="new" placeholder="New Password" value={password.new} onChange={(e) => setPassword({ ...password, new: e.target.value })} className="w-full border px-3 py-2 rounded" required />
+        <input
+          type="password"
+          name="current"
+          placeholder="Current Password"
+          value={password.current}
+          onChange={(e) => setPassword({ ...password, current: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+        <input
+          type="password"
+          name="new"
+          placeholder="New Password"
+          value={password.new}
+          onChange={(e) => setPassword({ ...password, new: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
         <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">Change Password</button>
       </form>
 
@@ -117,10 +158,42 @@ const Settings = () => {
       {/* Security Questions Form */}
       <form onSubmit={handleSecurityQuestionsSubmit} className="mt-6 space-y-4">
         <h2 className="text-xl font-semibold">Security Questions</h2>
-        <input type="text" name="question1" placeholder="Security Question 1" value={securityQuestions.question1} onChange={(e) => setSecurityQuestions({ ...securityQuestions, question1: e.target.value })} className="w-full border px-3 py-2 rounded" required />
-        <input type="text" name="answer1" placeholder="Answer 1" value={securityQuestions.answer1} onChange={(e) => setSecurityQuestions({ ...securityQuestions, answer1: e.target.value })} className="w-full border px-3 py-2 rounded" required />
-        <input type="text" name="question2" placeholder="Security Question 2" value={securityQuestions.question2} onChange={(e) => setSecurityQuestions({ ...securityQuestions, question2: e.target.value })} className="w-full border px-3 py-2 rounded" required />
-        <input type="text" name="answer2" placeholder="Answer 2" value={securityQuestions.answer2} onChange={(e) => setSecurityQuestions({ ...securityQuestions, answer2: e.target.value })} className="w-full border px-3 py-2 rounded" required />
+        <input
+          type="text"
+          name="question1"
+          placeholder="Security Question 1"
+          value={securityQuestions.question1}
+          onChange={(e) => setSecurityQuestions({ ...securityQuestions, question1: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+        <input
+          type="text"
+          name="answer1"
+          placeholder="Answer 1"
+          value={securityQuestions.answer1}
+          onChange={(e) => setSecurityQuestions({ ...securityQuestions, answer1: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+        <input
+          type="text"
+          name="question2"
+          placeholder="Security Question 2"
+          value={securityQuestions.question2}
+          onChange={(e) => setSecurityQuestions({ ...securityQuestions, question2: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+        <input
+          type="text"
+          name="answer2"
+          placeholder="Answer 2"
+          value={securityQuestions.answer2}
+          onChange={(e) => setSecurityQuestions({ ...securityQuestions, answer2: e.target.value })}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
         <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">Save Security Questions</button>
       </form>
 
