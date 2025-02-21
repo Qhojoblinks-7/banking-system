@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useUser } from "../components/UserContext"; // Import global user context
+import { useData } from "../context/DataContext"; // Use global DataContext
 
 const LoanApplication = () => {
-  const { user, token } = useUser(); // Get user data and token from context
+  const { user, token, createLoan } = useData(); // Retrieve user, token, and the createLoan function from the global context
   const [formData, setFormData] = useState({
     loan_amount: "",
     loan_term: "",
@@ -22,39 +22,29 @@ const LoanApplication = () => {
       setAlert({ type: "error", message: "User not authenticated." });
       return;
     }
-
     setLoading(true);
     setAlert(null);
 
     try {
-      const response = await fetch("/api/loan-application", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...formData, user_id: user.user_id }), // Include user ID
+      const payload = {
+        user_id: user.user_id, // Include user ID from global context
+        loan_amount: Number(formData.loan_amount),
+        loan_term: Number(formData.loan_term),
+        purpose: formData.purpose,
+        collateral: formData.collateral,
+      };
+
+      await createLoan(payload);
+      setAlert({ type: "success", message: "✅ Loan application submitted successfully!" });
+      setFormData({
+        loan_amount: "",
+        loan_term: "",
+        purpose: "",
+        collateral: "",
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setAlert({ type: "error", message: data.error || "Loan application failed." });
-      } else {
-        setAlert({ type: "success", message: "✅ Loan application submitted successfully!" });
-        setFormData({
-          loan_amount: "",
-          loan_term: "",
-          purpose: "",
-          collateral: "",
-        });
-
-        // Optionally update user's loan applications in global state
-        user.loans = [...(user.loans || []), data.loan];
-      }
     } catch (error) {
-      setAlert({ type: "error", message: error.message });
+      setAlert({ type: "error", message: error.message || "Loan application failed." });
     }
-
     setLoading(false);
   };
 
