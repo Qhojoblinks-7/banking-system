@@ -1,46 +1,43 @@
 import { useEffect, useState } from "react";
-import { useUser } from "../components/UserContext"; // Import global user context
-import axios from "axios";
+import { useData } from "../context/DataContext"; // Use global DataContext
 import userProfilePic from "../assets/avatars-3-d-avatar-210.png"; // Ensure path is correct
 
 const TransactionHistory = () => {
-  const { user, token } = useUser(); // Get user details from global context
-  const [transactions, setTransactions] = useState([]);
+  const { user, token, transactions, fetchTransactions } = useData();
   const [totalExpenditure, setTotalExpenditure] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fetch transactions when user and token are available
   useEffect(() => {
     if (!user || !token) {
       setError("User not authenticated.");
       setLoading(false);
       return;
     }
-
-    const fetchTransactions = async () => {
+    const getTransactions = async () => {
       try {
-        const response = await axios.get(`/api/transactions/${user.user_id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.data && response.data.transactions) {
-          setTransactions(response.data.transactions);
-
-          const expenditure = response.data.transactions
-            .filter((transaction) => transaction.amount < 0)
-            .reduce((acc, transaction) => acc + Math.abs(transaction.amount), 0);
-
-          setTotalExpenditure(expenditure);
-        }
+        await fetchTransactions();
       } catch (err) {
         setError(err.response?.data?.error || "Failed to fetch transactions.");
       } finally {
         setLoading(false);
       }
     };
+    getTransactions();
+  }, [user, token, fetchTransactions]);
 
-    fetchTransactions();
-  }, [user, token]);
+  // Compute total expenditure whenever transactions change
+  useEffect(() => {
+    if (transactions && transactions.length > 0) {
+      const expenditure = transactions
+        .filter((transaction) => transaction.amount < 0)
+        .reduce((acc, transaction) => acc + Math.abs(transaction.amount), 0);
+      setTotalExpenditure(expenditure);
+    } else {
+      setTotalExpenditure(0);
+    }
+  }, [transactions]);
 
   if (loading) {
     return (
