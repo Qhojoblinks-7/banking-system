@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useUser } from "../components/UserContext"; // Import global user context
-import axios from "axios";
+import { useData } from "../context/DataContext"; // Use the global DataContext
 import logo from "../assets/Layer 2.png"; // Ensure this path is correct
 
 // Payment Card Component
@@ -23,46 +22,29 @@ const PaymentCard = ({ title, provider, link }) => (
 
 // Main Bill Payments Component
 const BillPayments = () => {
-  const { user, token } = useUser(); // Get user data and token from context
+  const {
+    token,
+    paymentData,
+    paymentLoading,
+    paymentError,
+    fetchPaymentOptions,
+  } = useData(); // Get token and payment-related functions/data from context
   const [selectedTab, setSelectedTab] = useState("Utilities");
-  const [paymentData, setPaymentData] = useState({ Utilities: [], "Mobile Recharge": [], "Credit Card Bills": [] });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchPaymentOptions = async () => {
-      if (!token) return; // Ensure token is available
+    if (token) {
+      fetchPaymentOptions();
+    }
+  }, [token, fetchPaymentOptions]);
 
-      try {
-        setLoading(true);
+  const tabs = Object.keys(paymentData);
 
-        // Fetch user's available payment options (linked accounts, preferences, etc.)
-        const response = await axios.get("/api/payments", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.data) {
-          setPaymentData(response.data);
-        }
-      } catch (err) {
-        console.error("Error fetching payment options:", err);
-        setError(err.response?.data?.message || "Failed to load payment options.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPaymentOptions();
-  }, [token]); // Fetch only when the user logs in
-
-  const tabs = Object.keys(paymentData); // Dynamically generate tabs from API response
-
-  if (loading) {
+  if (paymentLoading) {
     return <div className="text-center text-gray-500">Loading payment options...</div>;
   }
 
-  if (error) {
-    return <div className="text-red-500 text-center">Error: {error}</div>;
+  if (paymentError) {
+    return <div className="text-red-500 text-center">Error: {paymentError}</div>;
   }
 
   return (
