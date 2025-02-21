@@ -1,24 +1,24 @@
 import { Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
-import { DataProvider } from './context/DataContext';
-import Analytics from './components/Analytics';
-import LoanApplication from './components/LoanApplication';
+import { DataProvider } from './components/context/DataContext';
+import Analytics from './components/userdashboard/Analytics';
+import LoanApplication from './components/user/LoanApplication';
 
 // Lazy loading components for better performance
 const CreateAccount = lazy(() => import('./components/CreateAccount'));
 const Home = lazy(() => import('./components/Home'));
-const UserAccountOverview = lazy(() => import('./components/UserAccountOverview'));
-const UserDashboard = lazy(() => import('./components/UserDashboard'));
-const AccountOverview = lazy(() => import('./components/AccountOverview'));
-const TransactionHistory = lazy(() => import('./components/TransactionHistory'));
-const TransferFunds = lazy(() => import('./components/TransferFunds'));
+const UserAccountOverview = lazy(() => import('./components/userdashboard/UserAccountOverview'));
+const UserDashboard = lazy(() => import('./components/userdashboard/UserDashboard'));
+const AccountOverview = lazy(() => import('./components/userdashboard/AccountOverview'));
+const TransactionHistory = lazy(() => import('./components/user/TransactionHistory'));
+const TransferFunds = lazy(() => import('./components/user/TransferFunds'));
 const ErrorBoundary = lazy(() => import('./components/ErrorBoundary'));
-const Deposits = lazy(() => import('./components/Deposits'));
-const Withdrawals = lazy(() => import('./components/Withdrawals'));
-const Settings = lazy(() => import('./components/Settings'));
-const Investments = lazy(() => import('./components/Investments'));
+const Deposits = lazy(() => import('./components/user/Deposits'));
+const Withdrawals = lazy(() => import('./components/user/Withdrawals'));
+const Settings = lazy(() => import('./components/userdashboard/Settings'));
+const Investments = lazy(() => import('./components/user/Investments'));
 const Cards = lazy(() => import('./components/cards/Cards'));
-const BillPayments = lazy(() => import('./components/BillPayments'));
+const BillPayments = lazy(() => import('./components/user/BillPayments'));
 const OTPVerification = lazy(() => import('./components/OTPVerification'));
 
 const App = () => {

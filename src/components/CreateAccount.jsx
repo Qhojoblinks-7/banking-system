@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useData } from "../context/DataContext"; // Use global DataContext
+import { useData } from "./context/DataContext"; // Use global DataContext
 import logo from "../assets/Layer 2.png";
 import OTPVerification from "./OTPVerification";
 

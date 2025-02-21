@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useData } from "../context/DataContext"; // Use global DataContext
+import { useData } from "../components/context/DataContext"; // Use global DataContext
 import axios from "axios";
 import Overlay from "./Overlay"; // Assuming an Overlay component exists
 
