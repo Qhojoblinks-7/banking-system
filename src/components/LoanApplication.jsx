@@ -1,48 +1,60 @@
-import  { useState } from 'react';
+import { useState } from "react";
+import { useUser } from "../components/UserContext"; // Import global user context
 
 const LoanApplication = () => {
+  const { user, token } = useUser(); // Get user data and token from context
   const [formData, setFormData] = useState({
-    loan_amount: '',
-    loan_term: '',
-    purpose: '',
-    collateral: '',
+    loan_amount: "",
+    loan_term: "",
+    purpose: "",
+    collateral: "",
   });
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState(null);
 
   const handleChange = (e) => {
-    setFormData({ 
-      ...formData, 
-      [e.target.name]: e.target.value 
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user || !token) {
+      setAlert({ type: "error", message: "User not authenticated." });
+      return;
+    }
+
     setLoading(true);
     setAlert(null);
 
     try {
-      const response = await fetch('/api/loan-application', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+      const response = await fetch("/api/loan-application", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...formData, user_id: user.user_id }), // Include user ID
       });
+
       const data = await response.json();
       if (!response.ok) {
-        setAlert({ type: 'error', message: data.error || 'Loan application failed.' });
+        setAlert({ type: "error", message: data.error || "Loan application failed." });
       } else {
-        setAlert({ type: 'success', message: 'Loan application submitted successfully!' });
+        setAlert({ type: "success", message: "✅ Loan application submitted successfully!" });
         setFormData({
-          loan_amount: '',
-          loan_term: '',
-          purpose: '',
-          collateral: '',
+          loan_amount: "",
+          loan_term: "",
+          purpose: "",
+          collateral: "",
         });
+
+        // Optionally update user's loan applications in global state
+        user.loans = [...(user.loans || []), data.loan];
       }
     } catch (error) {
-      setAlert({ type: 'error', message: error.message });
+      setAlert({ type: "error", message: error.message });
     }
+
     setLoading(false);
   };
 
@@ -50,16 +62,20 @@ const LoanApplication = () => {
     <div className="p-4 max-w-md mx-auto">
       <h1 className="text-2xl font-bold mb-4 text-center">Loan Application</h1>
       {alert && (
-        <div className={`mb-4 p-3 rounded text-center ${alert.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+        <div
+          className={`mb-4 p-3 rounded text-center ${
+            alert.type === "error" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+          }`}
+        >
           {alert.message}
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-gray-700 mb-1">Loan Amount:</label>
-          <input 
-            type="number" 
-            name="loan_amount" 
+          <input
+            type="number"
+            name="loan_amount"
             value={formData.loan_amount}
             onChange={handleChange}
             placeholder="Enter loan amount"
@@ -69,7 +85,7 @@ const LoanApplication = () => {
         </div>
         <div>
           <label className="block text-gray-700 mb-1">Loan Term (months):</label>
-          <input 
+          <input
             type="number"
             name="loan_term"
             value={formData.loan_term}
@@ -81,7 +97,7 @@ const LoanApplication = () => {
         </div>
         <div>
           <label className="block text-gray-700 mb-1">Purpose:</label>
-          <textarea 
+          <textarea
             name="purpose"
             value={formData.purpose}
             onChange={handleChange}
@@ -92,7 +108,7 @@ const LoanApplication = () => {
         </div>
         <div>
           <label className="block text-gray-700 mb-1">Collateral (optional):</label>
-          <input 
+          <input
             type="text"
             name="collateral"
             value={formData.collateral}
@@ -101,12 +117,12 @@ const LoanApplication = () => {
             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300"
           />
         </div>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="w-full bg-emerald-600 text-white font-semibold rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50"
           disabled={loading}
         >
-          {loading ? 'Submitting...' : 'Submit Application'}
+          {loading ? "Submitting..." : "Submit Application"}
         </button>
       </form>
     </div>

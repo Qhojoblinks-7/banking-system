@@ -9,12 +9,5 @@ dotenv.config();
 export default defineConfig({
   plugins: [react()],
   server: {
-    proxy: {
-      '/api': {
-        target: process.env.VITE_SUPABASE_URL,
-        changeOrigin: true,
-        secure: false,
-      },
-    },
   },
 });

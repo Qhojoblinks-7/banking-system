@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useUser } from "../components/UserContext"; // Import global user context
 import axios from "axios";
 
 const Investments = () => {
-  const [investments, setInvestments] = useState([]);
+  const { user, token } = useUser(); // Get user data and token from context
+  const [investments, setInvestments] = useState(user?.investments || []);
   const [amount, setAmount] = useState("");
   const [investmentType, setInvestmentType] = useState("Fixed Deposit");
   const [duration, setDuration] = useState(12); // Default 12 months
@@ -11,23 +13,15 @@ const Investments = () => {
   const [investmentOptions, setInvestmentOptions] = useState([]);
 
   useEffect(() => {
-    fetchInvestments();
+    if (!user || !token) return;
     fetchInvestmentOptions();
-  }, []);
-
-  const fetchInvestments = async () => {
-    try {
-      const userId = "USER_ID_HERE"; // Replace with actual user ID
-      const response = await axios.get(`/api/investments/${userId}`);
-      setInvestments(response.data.investments || []);
-    } catch (error) {
-      console.error("Error fetching investments:", error);
-    }
-  };
+  }, [user, token]);
 
   const fetchInvestmentOptions = async () => {
     try {
-      const response = await axios.get("/api/investment-options");
+      const response = await axios.get("/api/investment-options", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setInvestmentOptions(response.data.options || []);
     } catch (error) {
       console.error("Error fetching investment options:", error);
@@ -36,22 +30,36 @@ const Investments = () => {
 
   const handleCreateInvestment = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      const response = await axios.post("/api/investments", {
-        user_id: "USER_ID_HERE", // Replace with actual user ID
-        amount,
-        investment_type: investmentType,
-        duration,
-      });
-
-      setMessage("Investment Created Successfully!");
-      setAmount("");
-      fetchInvestments();
-    } catch (error) {
-      setMessage("Failed to create investment.");
+    if (!user || !token) {
+      setMessage("User not authenticated.");
+      return;
     }
-    setLoading(false);
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        "/api/investments",
+        {
+          user_id: user.user_id, // Get user ID from context
+          amount,
+          investment_type: investmentType,
+          duration,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setMessage("✅ Investment Created Successfully!");
+      setAmount("");
+
+      // Update investments globally
+      setInvestments((prevInvestments) => [...prevInvestments, response.data.investment]);
+    } catch (error) {
+      setMessage("❌ Failed to create investment.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -112,7 +120,7 @@ const Investments = () => {
           {investments.map((investment) => (
             <div key={investment.investment_id} className="p-4 border-b last:border-none">
               <h3 className="text-lg font-semibold">{investment.investment_type}</h3>
-              <p className="text-gray-600">Amount: ${investment.amount}</p>
+              <p className="text-gray-600">Amount: GHS {investment.amount}</p>
               <p className="text-gray-600">Duration: {investment.duration} months</p>
               <p className="text-gray-600">Status: {investment.status}</p>
             </div>

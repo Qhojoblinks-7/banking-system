@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const { Pool } = require('pg');
 const supabase = require('./supabaseClient');
 
@@ -22,6 +23,7 @@ pool.connect((err) => {
 });
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const REFRESH_SECRET = process.env.REFRESH_SECRET; // New secret for refresh tokens
 
 // 🔐 Authenticate Token Middleware
 function authenticateToken(req, res, next) {
@@ -52,34 +54,39 @@ app.post('/api/register', async (req, res) => {
   try {
     const { full_name, email, phone_number, date_of_birth, residential_address, account_type, username, password } = req.body;
 
+    // Check if user already exists
     const { data: existingUser } = await supabase.from('user_accounts').select('email').eq('email', email).single();
     if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
+    // Hash the password
     const password_hash = await bcrypt.hash(password, 10);
 
+    // Insert user into database
     const { data: newUser, error: userError } = await supabase
       .from('user_accounts')
       .insert([{ full_name, email, phone_number, date_of_birth, residential_address, account_type, username, password_hash }])
       .select()
       .single();
-
     if (userError) return res.status(400).json({ error: userError.message });
 
+    // Create a bank account for the user
     const { data: bankAccount, error: bankError } = await supabase
       .from('bank_accounts')
       .insert([{ user_id: newUser.user_id, account_type, balance: 0 }])
+      .select()
       .single();
-
     if (bankError) return res.status(400).json({ error: bankError.message });
 
-    // Send OTP to user's email
-    const { error: otpError } = await supabase.auth.api.sendMagicLinkEmail(email);
+    // Send OTP to user's email using new method
+    const { error: otpError } = await supabase.auth.signInWithOtp({ email });
     if (otpError) return res.status(400).json({ error: otpError.message });
 
     res.json({ message: '✅ User registered successfully. Please verify your email.', user: newUser, bank_account: bankAccount });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    console.error("Registration error:", error.response);
+    showAlert(`Error: ${error.response?.data?.error || "Registration failed."}`, "bg-red-100 text-red-700");
   }
+  
 });
 
 // 📌 Verify OTP
@@ -91,9 +98,7 @@ app.post('/api/verify-otp', async (req, res) => {
       token: otp,
       type: "email",
     });
-
     if (error) return res.status(400).json({ error: error.message });
-
     res.json({ message: '✅ OTP verified successfully', data });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -104,45 +109,81 @@ app.post('/api/verify-otp', async (req, res) => {
 app.post('/api/resend-otp', async (req, res) => {
   try {
     const { email } = req.body;
-
-    // Send OTP to user's email
-    const { error: otpError } = await supabase.auth.api.sendMagicLinkEmail(email);
+    // Use signInWithOtp to resend OTP instead of sendMagicLinkEmail
+    const { error: otpError } = await supabase.auth.signInWithOtp({ email });
     if (otpError) return res.status(400).json({ error: otpError.message });
-
     res.json({ message: '✅ OTP resent successfully.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 📌 User login
+// 📌 User login with Refresh Token support
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const { data: user, error } = await supabase.from('user_accounts').select('*').eq('email', email).single();
     if (error || !user) return res.status(400).json({ error: 'Invalid email or password' });
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(400).json({ error: 'Invalid email or password' });
 
-    const token = jwt.sign({ user_id: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+    // Generate access token (15 minutes) and refresh token (7 days)
+    const accessToken = jwt.sign({ user_id: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ user_id: user.user_id }, REFRESH_SECRET, { expiresIn: '7d' });
 
-    res.json({ token, user });
+    // Store refresh token in your database (assumes a 'refresh_tokens' table exists)
+    await supabase.from('refresh_tokens').insert([{ user_id: user.user_id, token: refreshToken }]);
+
+    res.json({ accessToken, refreshToken, user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// 📌 Refresh Token Endpoint
+app.post('/api/refresh-token', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(401).json({ error: 'Refresh token required' });
+
+    jwt.verify(refreshToken, REFRESH_SECRET, async (err, decoded) => {
+      if (err) return res.status(403).json({ error: 'Invalid refresh token' });
+
+      // Check if refresh token exists in database
+      const { data, error } = await supabase.from('refresh_tokens').select('*').eq('token', refreshToken).single();
+      if (error || !data) return res.status(403).json({ error: 'Refresh token not found' });
+
+      // Generate new access token
+      const newAccessToken = jwt.sign({ user_id: decoded.user_id }, JWT_SECRET, { expiresIn: '15m' });
+      res.json({ accessToken: newAccessToken });
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 📌 Logout Endpoint - Remove Refresh Token
+app.post('/api/logout', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(400).json({ error: 'Refresh token required' });
+    await supabase.from('refresh_tokens').delete().eq('token', refreshToken);
+    res.json({ message: 'Logged out successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Protect subsequent endpoints with authentication middleware
 app.use('/api', authenticateToken);
 
 // 📌 Get user details
-app.get('/api/user/:id', async (req, res) => {
+app.get('/api/user', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { data: user, error } = await supabase.from('user_accounts').select('*').eq('user_id', id).single();
-    if (error) return res.status(400).json({ error: 'User not found' });
-
+    const { user_id } = req.user;
+    const { data: user, error } = await supabase.from('user_accounts').select('*').eq('user_id', user_id).single();
+    if (error) return res.status(400).json({ error: error.message });
     res.json({ user });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -155,7 +196,6 @@ app.get('/api/balance', async (req, res) => {
     const { user_id } = req.user;
     const { data, error } = await supabase.from('bank_accounts').select('balance').eq('user_id', user_id).single();
     if (error) return res.status(400).json({ error: error.message });
-
     res.json({ balance: data.balance });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -166,17 +206,13 @@ app.get('/api/balance', async (req, res) => {
 app.post('/api/cards', async (req, res) => {
   try {
     const { user_id, card_number, cvv, expiry_date, card_type, card_provider } = req.body;
-
     const hashedCardNumber = await bcrypt.hash(card_number, 10);
     const hashedCvv = await bcrypt.hash(cvv, 10);
     const lastFourDigits = card_number.slice(-4);
-
     const { data, error } = await supabase.from('cards').insert([
       { user_id, hashed_card_number: hashedCardNumber, last_four_digits: lastFourDigits, hashed_cvv: hashedCvv, expiry_date, card_type, card_provider, card_status: 'active' }
     ]).single();
-
     if (error) return res.status(400).json({ error: error.message });
-
     res.json({ message: '✅ Card added successfully', card: { last_four_digits: data.last_four_digits, expiry_date } });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -189,7 +225,6 @@ app.get('/api/cards', async (req, res) => {
     const { user_id } = req.user;
     const { data, error } = await supabase.from('cards').select('last_four_digits, expiry_date, card_type, card_provider').eq('user_id', user_id);
     if (error) return res.status(400).json({ error: error.message });
-
     res.json({ cards: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -202,9 +237,20 @@ app.post('/api/cards/verify', async (req, res) => {
     const { user_id, card_number } = req.body;
     const { data, error } = await supabase.from('cards').select('hashed_card_number').eq('user_id', user_id).single();
     if (error) return res.status(400).json({ error: 'Card not found' });
-
     const match = await bcrypt.compare(card_number, data.hashed_card_number);
     res.json({ verified: match });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 📌 Get user transactions
+app.get('/api/transactions', async (req, res) => {
+  try {
+    const { user_id } = req.user;
+    const { data: transactions, error } = await supabase.from('transactions').select('*').eq('user_id', user_id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ transactions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

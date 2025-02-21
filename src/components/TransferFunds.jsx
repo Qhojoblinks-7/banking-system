@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaUniversity, FaRegCreditCard, FaMobileAlt } from "react-icons/fa";
+import { useUser } from "../components/UserContext"; // Import global user context
 import logo from "../assets/Layer 2.png";
 
 // Mock bank options
@@ -10,7 +11,7 @@ const banks = [
 ];
 
 const TransferFunds = () => {
-  // Form State
+  const { user, updateTransactions } = useUser(); // Access user context & update function
   const [recipientName, setRecipientName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [bank, setBank] = useState("");
@@ -54,7 +55,7 @@ const TransferFunds = () => {
     setShowOtpModal(true); // Show OTP modal for verification
   };
 
-  // Handle OTP Submission
+  // Simulate transfer process
   const confirmTransfer = async () => {
     if (otp.length !== 6) {
       setError("Invalid OTP. Must be 6 digits.");
@@ -64,33 +65,28 @@ const TransferFunds = () => {
     setLoading(true);
     setTransactionStatus("Processing transaction...");
 
-    try {
-      const response = await fetch("/api/transfer", {
-        method: "POST",
-        body: JSON.stringify({ recipientName, accountNumber, bank, amount, paymentMethod, otp }),
-        headers: { "Content-Type": "application/json" },
-      });
+    setTimeout(() => {
+      // Simulate transaction update in UserContext
+      const newTransaction = {
+        transaction_id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        description: `Transfer to ${recipientName} (${bank.toUpperCase()})`,
+        amount: -parseFloat(amount), // Deduct amount
+        status: "Completed",
+      };
 
-      if (!response.ok) throw new Error("Transaction failed");
+      updateTransactions(newTransaction); // Update transactions globally
 
-      const data = await response.json();
-      if (data.success) {
-        setTransactionStatus("Transfer Successful ✅");
-      } else {
-        setError("Transfer failed. Please try again.");
-      }
-    } catch (err) {
-      setError("Error processing transaction.");
-    } finally {
+      setTransactionStatus("Transfer Successful ✅");
       setLoading(false);
       setShowOtpModal(false);
-    }
+    }, 2000);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="max-w-lg w-full bg-white p-6 rounded-lg shadow-lg">
-      <img src={logo}alt="transfer" className="w-20 h-20 mx-auto" />
+        <img src={logo} alt="transfer" className="w-20 h-20 mx-auto" />
         <h2 className="text-2xl font-semibold text-center mb-4 text-gray-800">
           Transfer Funds
         </h2>
@@ -204,6 +200,26 @@ const TransferFunds = () => {
             {loading ? "Processing..." : "Send Money"}
           </button>
         </form>
+
+        {/* OTP Modal */}
+        {showOtpModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-md text-center shadow-lg">
+              <h3 className="text-lg font-semibold">Enter OTP</h3>
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="w-full p-2 border rounded-md mt-3"
+                maxLength="6"
+                required
+              />
+              <button onClick={confirmTransfer} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md">
+                Confirm Transfer
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

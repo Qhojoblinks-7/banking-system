@@ -45,16 +45,25 @@ const UserDashboard = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userId = '11111111-1111-1111-1111-111111111111';
-        const response = await fetch(`/api/user/${userId}`);
+        const response = await fetch('/api/user/accounts', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`, // Include token if required
+          },
+        });
+
         if (!response.ok) {
           throw new Error("Failed to fetch user data");
         }
+
         const data = await response.json();
-        if (data.user) {
+        if (data.accounts && data.accounts.length > 0) {
+          const account = data.accounts[0]; // Assuming the user has at least one account
           setUserData({
-            ...data.user,
-            balance: data.user.balance || "0.00",
+            account_type: account.account_type || 'N/A',
+            account_number: account.account_id || 'N/A',
+            balance: account.balance || "0.00",
           });
         }
       } catch (error) {

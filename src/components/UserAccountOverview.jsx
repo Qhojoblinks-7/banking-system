@@ -57,11 +57,23 @@ const UserAccountOverview = () => {
           throw new Error("User ID is required but not available. Please log in.");
         }
         console.log(`Fetching data for user ID: ${storedUserId}`);
-        const response = await axios.get(`/api/user/${storedUserId}`);
+        const response = await axios.get(`/api/user/accounts`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`, // Include token if required
+          },
+        });
         console.log("Response data:", response.data);
 
-        if (response.data && response.data.user) {
-          setUserData(response.data.user);
+        if (response.data && response.data.accounts && response.data.accounts.length > 0) {
+          const account = response.data.accounts[0]; // Assuming the user has at least one account
+          setUserData({
+            full_name: account.full_name || "N/A",
+            account_type: account.account_type || "N/A",
+            balance: account.balance || 0.0,
+            accountNumber: account.account_id || "N/A",
+            created_at: account.created_at || "N/A",
+            contact: account.contact || "N/A",
+          });
         } else {
           throw new Error("User data not found.");
         }
@@ -80,21 +92,33 @@ const UserAccountOverview = () => {
   const handleRefresh = async () => {
     setLoading(true);
     setError(null);
-  
+
     try {
       const storedUserId = localStorage.getItem("userId");
-  
+
       if (!storedUserId) {
         throw new Error("User ID is required but not available. Please log in.");
       }
-  
+
       console.log(`Fetching updated data for user ID: ${storedUserId}`);
-  
-      const response = await axios.get(`/api/user/${storedUserId}`);
-  
-      if (response.data && response.data.user) {
-        setUserData(response.data.user);
-        console.log("User data updated:", response.data.user);
+
+      const response = await axios.get(`/api/user/accounts`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`, // Include token if required
+        },
+      });
+
+      if (response.data && response.data.accounts && response.data.accounts.length > 0) {
+        const account = response.data.accounts[0]; // Assuming the user has at least one account
+        setUserData({
+          full_name: account.full_name || "N/A",
+          account_type: account.account_type || "N/A",
+          balance: account.balance || 0.0,
+          accountNumber: account.account_id || "N/A",
+          created_at: account.created_at || "N/A",
+          contact: account.contact || "N/A",
+        });
+        console.log("User data updated:", response.data.accounts[0]);
       } else {
         throw new Error("Failed to refresh user data.");
       }
@@ -105,7 +129,6 @@ const UserAccountOverview = () => {
       setLoading(false);
     }
   };
-  
 
   // Function to copy account number to clipboard
   const copyAccountNumber = async () => {
@@ -171,19 +194,6 @@ const UserAccountOverview = () => {
             </button>
           </div>
         </div>
-
-        {/* Benefits Section */}
-        <ul className="text-left mb-6 space-y-2">
-          <li className="text-gray-600 text-md font-medium">
-            • 24/7 Customer Support
-          </li>
-          <li className="text-gray-600 text-md font-medium">
-            • Free International Transfers
-          </li>
-          <li className="text-gray-600 text-md font-medium">
-            • High-Interest Rates
-          </li>
-        </ul>
 
         {/* Collapsible Details (Additional User Info) */}
         <CollapsibleDetails

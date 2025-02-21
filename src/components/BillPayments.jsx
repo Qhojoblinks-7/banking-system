@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "../components/UserContext"; // Import global user context
+import axios from "axios";
 import logo from "../assets/Layer 2.png"; // Ensure this path is correct
 
 // Payment Card Component
@@ -21,64 +23,47 @@ const PaymentCard = ({ title, provider, link }) => (
 
 // Main Bill Payments Component
 const BillPayments = () => {
+  const { user, token } = useUser(); // Get user data and token from context
   const [selectedTab, setSelectedTab] = useState("Utilities");
+  const [paymentData, setPaymentData] = useState({ Utilities: [], "Mobile Recharge": [], "Credit Card Bills": [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const tabs = ["Utilities", "Mobile Recharge", "Credit Card Bills"];
+  useEffect(() => {
+    const fetchPaymentOptions = async () => {
+      if (!token) return; // Ensure token is available
 
-  // Data for each payment category
-  const paymentData = {
-    Utilities: [
-      {
-        title: "Electricity Bill",
-        provider: "Electricity Company of Ghana (ECG)",
-        link: "https://powerapp.ecg.com.gh/",
-      },
-      {
-        title: "Water Bill",
-        provider: "Ghana Water Company Limited",
-        link: "https://gwcbilling.com/GWCPortal/",
-      },
-      {
-        title: "Internet & Cable TV",
-        provider: "Vodafone Ghana",
-        link: "https://vodafone.com.gh",
-      },
-      {
-        title: "Telephone Services",
-        provider: "Vodafone Ghana",
-        link: "https://vodafone.com.gh",
-      },
-    ],
-    "Mobile Recharge": [
-      {
-        title: "MTN Airtime",
-        provider: "MTN Ghana",
-        link: "https://mtn.com.gh",
-      },
-      {
-        title: "Vodafone Airtime",
-        provider: "Vodafone Ghana",
-        link: "https://vodafone.com.gh",
-      },
-      {
-        title: "AirtelTigo Airtime",
-        provider: "AirtelTigo Ghana",
-        link: "https://airteltigo.com.gh",
-      },
-    ],
-    "Credit Card Bills": [
-      {
-        title: "Visa Credit Card",
-        provider: "Standard Chartered Ghana",
-        link: "https://www.sc.com/gh/",
-      },
-      {
-        title: "MasterCard Credit Card",
-        provider: "Fidelity Bank Ghana",
-        link: "https://www.fidelitybank.com.gh/",
-      },
-    ],
-  };
+      try {
+        setLoading(true);
+
+        // Fetch user's available payment options (linked accounts, preferences, etc.)
+        const response = await axios.get("/api/payments", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data) {
+          setPaymentData(response.data);
+        }
+      } catch (err) {
+        console.error("Error fetching payment options:", err);
+        setError(err.response?.data?.message || "Failed to load payment options.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentOptions();
+  }, [token]); // Fetch only when the user logs in
+
+  const tabs = Object.keys(paymentData); // Dynamically generate tabs from API response
+
+  if (loading) {
+    return <div className="text-center text-gray-500">Loading payment options...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center">Error: {error}</div>;
+  }
 
   return (
     <div className="bg-white p-6 mt-6 rounded-lg shadow-xl max-w-xl mx-auto">
@@ -110,14 +95,10 @@ const BillPayments = () => {
 
       {/* Tab Content */}
       <div>
-        <h3 className="text-lg font-semibold mb-3 text-gray-800">
-          {selectedTab}
-        </h3>
+        <h3 className="text-lg font-semibold mb-3 text-gray-800">{selectedTab}</h3>
 
         {paymentData[selectedTab]?.length > 0 ? (
-          paymentData[selectedTab].map((item, index) => (
-            <PaymentCard key={index} {...item} />
-          ))
+          paymentData[selectedTab].map((item, index) => <PaymentCard key={index} {...item} />)
         ) : (
           <p className="text-gray-500 text-center">No payment options available.</p>
         )}
