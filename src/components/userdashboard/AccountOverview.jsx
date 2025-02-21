@@ -1,10 +1,10 @@
-import { useUser } from "../components/UserContext"; // Import the global user context
+import { useData } from "../context/DataContext"; // Use global DataContext
 import { useNavigate } from "react-router-dom";
 import userProfilePic from "../assets/avatars-3-d-avatar-210.png"; // Adjust path as needed
 import Layout from "../Layout";
 
 const AccountOverview = () => {
-  const { user, token } = useUser(); // Access global user state
+  const { user, token } = useData(); // Access global user state from DataContext
   const navigate = useNavigate();
 
   if (!user) {
@@ -25,7 +25,9 @@ const AccountOverview = () => {
         <div className="mt-4 text-left">
           <h3 className="text-lg font-bold mb-2">Accounts</h3>
           {user.accounts && user.accounts.length > 0 ? (
-            user.accounts.map((account) => <AccountInfo key={account.account_id} account={account} />)
+            user.accounts.map((account) => (
+              <AccountInfo key={account.account_id} account={account} />
+            ))
           ) : (
             <p>No accounts found.</p>
           )}
