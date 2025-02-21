@@ -1,7 +1,7 @@
-import { useUser } from "../context/DataContext"; // Import user context
+import { useData } from "../context/DataContext"; // Use global DataContext
 
 const TransactionsOverview = () => {
-  const { transactions, totalExpenditure } = useUser(); // Get global transactions data
+  const { transactions, totalExpenditure } = useData(); // Get global transactions and totalExpenditure
 
   return (
     <section className="mt-8 space-y-6 bg-sky-100 w-full p-6 rounded-lg shadow-md">
@@ -27,17 +27,30 @@ const TransactionsOverview = () => {
           <tbody className="text-gray-700">
             {transactions.length === 0 ? (
               <tr>
-                <td colSpan="4" className="text-center py-4">No recent transactions available</td>
+                <td colSpan="4" className="text-center py-4">
+                  No recent transactions available
+                </td>
               </tr>
             ) : (
               transactions.map((tx) => (
-                <tr key={tx.transaction_id} className="border-b last:border-none hover:bg-gray-100 transition">
+                <tr
+                  key={tx.transaction_id}
+                  className="border-b last:border-none hover:bg-gray-100 transition"
+                >
                   <td className="py-2 px-4">{tx.date || "N/A"}</td>
                   <td className="py-2 px-4">{tx.description || "No Description"}</td>
-                  <td className={`py-2 px-4 text-right font-semibold ${tx.amount < 0 ? "text-red-600" : "text-green-600"}`}>
-                    {tx.amount < 0 ? `-₵${Math.abs(tx.amount).toFixed(2)}` : `₵${tx.amount.toFixed(2)}`}
+                  <td
+                    className={`py-2 px-4 text-right font-semibold ${
+                      tx.amount < 0 ? "text-red-600" : "text-green-600"
+                    }`}
+                  >
+                    {tx.amount < 0
+                      ? `-₵${Math.abs(tx.amount).toFixed(2)}`
+                      : `₵${tx.amount.toFixed(2)}`}
                   </td>
-                  <td className="py-2 px-4 text-right">{tx.status || "Pending"}</td>
+                  <td className="py-2 px-4 text-right">
+                    {tx.status || "Pending"}
+                  </td>
                 </tr>
               ))
             )}
