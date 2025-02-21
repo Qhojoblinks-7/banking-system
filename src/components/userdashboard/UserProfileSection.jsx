@@ -2,14 +2,14 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Chart from 'chart.js/auto';
 
-import Header from './Header';
+import Header from '../Header';
 import MobileSidebar from './MobileSidebar';
 import DesktopSidebar from './DesktopSidebar';
 import UserProfileSection from './UserProfileSection';
 import TransactionsOverview from './TransactionsOverview';
 import QuickActions from './QuickActions';
 import ChartSection from './ChartSection';
-import Footer from './Footer';
+import Footer from '../Footer';
 
 const UserDashboard = () => {
   const navigate = useNavigate();

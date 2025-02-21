@@ -1,4 +1,4 @@
-import { useUser } from "../components/UserContext"; // Import user context
+import { useUser } from "../context/DataContext"; // Import user context
 
 const TransactionsOverview = () => {
   const { transactions, totalExpenditure } = useUser(); // Get global transactions data

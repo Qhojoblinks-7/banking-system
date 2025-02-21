@@ -1,6 +1,8 @@
-import  { useState } from "react";
+import { useState } from "react";
+import { useData } from "../context/DataContext"; // adjust the path as needed
 
-const CardForm = ({ addCard }) => {
+const CardForm = () => {
+  const { addCard } = useData();
   const [form, setForm] = useState({
     bank: "Visa",
     cardNumber: "",
@@ -13,17 +15,27 @@ const CardForm = ({ addCard }) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    addCard(form);
-    setForm({ bank: "Visa", cardNumber: "", holderName: "", expiry: "", cvv: "" });
+    // Transform the form data to match API expectations
+    const cardData = {
+      card_number: form.cardNumber,
+      cvv: form.cvv,
+      expiry_date: form.expiry,
+      card_type: "credit", // assuming a default type
+      card_provider: form.bank,
+      // Optionally include holderName if your API supports it
+    };
+    try {
+      await addCard(cardData);
+      setForm({ bank: "Visa", cardNumber: "", holderName: "", expiry: "", cvv: "" });
+    } catch (error) {
+      console.error("Failed to add card:", error);
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white p-6 rounded-lg shadow-md w-96"
-    >
+    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md w-96">
       <h2 className="text-lg font-bold mb-4">Add New Card</h2>
 
       <label className="block mb-2">Bank</label>

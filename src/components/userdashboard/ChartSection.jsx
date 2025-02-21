@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useUser } from "../components/UserContext"; // Import global user context
+import { useUser } from "../context/DataContext"; // Import global user context
 import Chart from "chart.js/auto";
 import axios from "axios";
 

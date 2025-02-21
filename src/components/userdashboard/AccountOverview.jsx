@@ -1,7 +1,7 @@
 import { useUser } from "../components/UserContext"; // Import the global user context
 import { useNavigate } from "react-router-dom";
 import userProfilePic from "../assets/avatars-3-d-avatar-210.png"; // Adjust path as needed
-import Layout from "./Layout";
+import Layout from "../Layout";
 
 const AccountOverview = () => {
   const { user, token } = useUser(); // Access global user state
