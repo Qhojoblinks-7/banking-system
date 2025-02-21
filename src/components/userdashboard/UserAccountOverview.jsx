@@ -1,139 +1,37 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useData } from "../context/DataContext"; // Use global DataContext
 import userProfilePic from "../assets/avatars-3-d-avatar-210.png";
-
-// A simple collapsible component for extra details
-const CollapsibleDetails = ({ details }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-4">
-      <button
-        onClick={() => setOpen(!open)}
-        className="text-blue-600 font-semibold focus:outline-none focus:underline"
-        aria-expanded={open}
-        aria-controls="additional-details"
-      >
-        {open ? "Hide Details" : "Show More Details"}
-      </button>
-      {open && (
-        <div id="additional-details" className="mt-2 p-4 bg-gray-100 rounded">
-          {details}
-        </div>
-      )}
-    </div>
-  );
-};
+import CollapsibleDetails from "./CollapsibleDetails"; // Assuming this component exists
 
 const UserAccountOverview = () => {
+  const { user, fetchUserData } = useData(); // Get global user data and fetch function
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Try to get user data from navigation state if available
-  const stateUser = location.state?.user;
-
-  // Initialize state with navigation state or default placeholders
-  const [userData, setUserData] = useState(
-    stateUser || {
-      full_name: "Loading...",
-      account_type: "N/A",
-      balance: 0.0,
-      accountNumber: "N/A",
-      created_at: "N/A",
-      contact: "N/A",
-    }
-  );
-  const [loading, setLoading] = useState(!stateUser);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch user data from the API if not provided via navigation state
+  // Fetch user data if not available
   useEffect(() => {
-    if (stateUser) return; // No need to fetch if we already have data
+    if (!user) {
+      fetchUserData().catch((err) => setError(err.message));
+    }
+  }, [user, fetchUserData]);
 
-    const fetchUserData = async () => {
-      try {
-        const storedUserId = localStorage.getItem("userId");
-        if (!storedUserId) {
-          throw new Error("User ID is required but not available. Please log in.");
-        }
-        console.log(`Fetching data for user ID: ${storedUserId}`);
-        const response = await axios.get(`/api/user/accounts`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`, // Include token if required
-          },
-        });
-        console.log("Response data:", response.data);
-
-        if (response.data && response.data.accounts && response.data.accounts.length > 0) {
-          const account = response.data.accounts[0]; // Assuming the user has at least one account
-          setUserData({
-            full_name: account.full_name || "N/A",
-            account_type: account.account_type || "N/A",
-            balance: account.balance || 0.0,
-            accountNumber: account.account_id || "N/A",
-            created_at: account.created_at || "N/A",
-            contact: account.contact || "N/A",
-          });
-        } else {
-          throw new Error("User data not found.");
-        }
-      } catch (err) {
-        console.error("Error fetching user data:", err);
-        setError(err.message || "Failed to fetch user data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [stateUser]);
-
-  // Function to refresh the user data manually
   const handleRefresh = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const storedUserId = localStorage.getItem("userId");
-
-      if (!storedUserId) {
-        throw new Error("User ID is required but not available. Please log in.");
-      }
-
-      console.log(`Fetching updated data for user ID: ${storedUserId}`);
-
-      const response = await axios.get(`/api/user/accounts`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`, // Include token if required
-        },
-      });
-
-      if (response.data && response.data.accounts && response.data.accounts.length > 0) {
-        const account = response.data.accounts[0]; // Assuming the user has at least one account
-        setUserData({
-          full_name: account.full_name || "N/A",
-          account_type: account.account_type || "N/A",
-          balance: account.balance || 0.0,
-          accountNumber: account.account_id || "N/A",
-          created_at: account.created_at || "N/A",
-          contact: account.contact || "N/A",
-        });
-        console.log("User data updated:", response.data.accounts[0]);
-      } else {
-        throw new Error("Failed to refresh user data.");
-      }
+      await fetchUserData();
     } catch (err) {
-      console.error("Error refreshing user data:", err);
-      setError(err.message || "Failed to refresh data.");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Function to copy account number to clipboard
   const copyAccountNumber = async () => {
     try {
-      await navigator.clipboard.writeText(userData.accountNumber);
+      await navigator.clipboard.writeText(user?.account_number || "");
       alert("Account number copied to clipboard!");
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -141,12 +39,11 @@ const UserAccountOverview = () => {
     }
   };
 
-  // Handler for navigation to dashboard or transaction history
   const handleNavigation = (path) => {
     navigate(path);
   };
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sky-500">
         <p className="text-white text-lg font-semibold">Loading user data...</p>
@@ -173,17 +70,17 @@ const UserAccountOverview = () => {
             className="w-24 h-24 rounded-full mb-4 border-4 border-green-500 shadow-2xl"
           />
           <h2 className="text-2xl font-extrabold text-green-700 mb-2">
-            {userData.full_name}
+            {user.full_name}
           </h2>
           <p className="text-lg text-gray-600 font-medium">
-            Account Type: {userData.account_type}
+            Account Type: {user.account_type}
           </p>
           <p className="text-lg text-gray-600 font-medium">
-            Balance: ${Number(userData.balance).toFixed(2)}
+            Balance: ${Number(user.balance).toFixed(2)}
           </p>
           <div className="mt-2 flex items-center space-x-2">
             <p className="text-gray-600 font-medium">
-              Account Number: {userData.accountNumber || "N/A"}
+              Account Number: {user.account_number || "N/A"}
             </p>
             <button
               onClick={copyAccountNumber}
@@ -195,15 +92,15 @@ const UserAccountOverview = () => {
           </div>
         </div>
 
-        {/* Collapsible Details (Additional User Info) */}
+        {/* Collapsible Details */}
         <CollapsibleDetails
           details={
             <>
               <p className="text-gray-600">
-                <span className="font-bold">Account Created:</span> {userData.created_at || "N/A"}
+                <span className="font-bold">Account Created:</span> {user.created_at || "N/A"}
               </p>
               <p className="text-gray-600">
-                <span className="font-bold">Contact:</span> {userData.contact || "N/A"}
+                <span className="font-bold">Contact:</span> {user.contact || "N/A"}
               </p>
             </>
           }
