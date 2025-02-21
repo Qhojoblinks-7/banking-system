@@ -391,6 +391,55 @@ app.get('/api/analytics', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
+// Create Withdrawal Endpoint
+// ---------------------------------------------------------------------
+app.post('/api/withdraw', async (req, res) => {
+  try {
+    // Destructure required fields from the request body
+    const { account_number, amount, method, scheduled_date } = req.body;
+    const { user_id } = req.user; // from authenticateToken middleware
+
+    // Retrieve the user's bank account matching the provided account_number
+    const accountResult = await pool.query(
+      'SELECT * FROM bank_accounts WHERE user_id = $1 AND account_number = $2',
+      [user_id, account_number]
+    );
+    if (accountResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Bank account not found or does not belong to user' });
+    }
+    const account = accountResult.rows[0];
+
+    // Validate the withdrawal amount
+    if (amount <= 0 || amount > account.balance) {
+      return res.status(400).json({ error: 'Invalid withdrawal amount' });
+    }
+
+    // Deduct the withdrawal amount from the account balance
+    const newBalance = account.balance - amount;
+    await pool.query(
+      'UPDATE bank_accounts SET balance = $1 WHERE account_id = $2',
+      [newBalance, account.account_id]
+    );
+
+    // Record the withdrawal transaction.
+    // The transactions table expects: transaction_id, account_id, transaction_type, amount, transaction_timestamp, description
+    const description = `Withdrawal via ${method}` + (scheduled_date ? ` scheduled on ${scheduled_date}` : '');
+    const transactionResult = await pool.query(
+      `INSERT INTO transactions (account_id, transaction_type, amount, description)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [account.account_id, 'withdrawal', amount, description]
+    );
+
+    res.json({ message: '✅ Withdrawal processed successfully', withdrawal: transactionResult.rows[0] });
+  } catch (err) {
+    console.error('Withdrawal error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ---------------------------------------------------------------------
 // Start the API Server
 // ---------------------------------------------------------------------
 const PORT = process.env.PORT || 3000;

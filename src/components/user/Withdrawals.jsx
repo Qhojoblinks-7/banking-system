@@ -1,9 +1,15 @@
 import { useState } from "react";
-import { useUser } from "../components/UserContext"; // Import Context API
-import axios from "axios";
-
+import { useData } from "../context/DataContext"; // Use global DataContext
+// Note: Ensure that the DataContext provides the `withdrawFunds` function.
 const Withdrawals = () => {
-  const { user, transactions, fetchUserData, fetchTransactions } = useUser(); // Use Context
+  const {
+    user,
+    transactions,
+    fetchUserData,
+    fetchTransactions,
+    withdrawFunds,
+  } = useData(); // Retrieve global state and functions from context
+
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawMethod, setWithdrawMethod] = useState("ATM Withdrawal");
   const [withdrawDate, setWithdrawDate] = useState("");
@@ -12,7 +18,7 @@ const Withdrawals = () => {
   const [error, setError] = useState("");
 
   // Select first account by default
-  const selectedAccount = user.accounts?.[0] || null;
+  const selectedAccount = user?.accounts?.[0] || null;
   const balance = selectedAccount ? selectedAccount.balance : 0;
 
   const handleWithdrawal = async (e) => {
@@ -21,22 +27,24 @@ const Withdrawals = () => {
     setMessage("");
 
     if (!selectedAccount) return setError("No account found.");
-    if (withdrawAmount <= 0 || withdrawAmount > balance) return setError("Invalid withdrawal amount.");
+    if (withdrawAmount <= 0 || withdrawAmount > balance)
+      return setError("Invalid withdrawal amount.");
 
     setLoading(true);
     try {
-      const response = await axios.post("/api/withdraw", {
+      const payload = {
         account_number: selectedAccount.account_number,
-        amount: withdrawAmount,
+        amount: Number(withdrawAmount),
         method: withdrawMethod,
         scheduled_date: withdrawDate || null,
-      });
+      };
 
+      await withdrawFunds(payload);
       setMessage("✅ Withdrawal successful!");
       setWithdrawAmount("");
       setWithdrawDate("");
-      fetchUserData(); // Refresh balance
-      fetchTransactions(); // Refresh transactions
+      await fetchUserData(); // Refresh balance and user info
+      await fetchTransactions(); // Refresh transactions
     } catch (err) {
       setError("❌ Withdrawal failed. Please try again.");
     }
@@ -62,7 +70,9 @@ const Withdrawals = () => {
           {/* Selected Account Info */}
           <div className="p-3 bg-gray-50 rounded-md shadow-sm">
             <h3 className="text-gray-700 font-semibold">Selected Account</h3>
-            <p className="text-sm text-gray-600">{selectedAccount?.account_type} - {selectedAccount?.account_number}</p>
+            <p className="text-sm text-gray-600">
+              {selectedAccount?.account_type} - {selectedAccount?.account_number}
+            </p>
             <p className="text-green-700 font-bold">Balance: GHC {balance.toFixed(2)}</p>
           </div>
 
@@ -116,11 +126,13 @@ const Withdrawals = () => {
         ) : (
           <ul className="mt-2">
             {transactions
-              .filter(txn => txn.type === "withdrawal")
+              .filter((txn) => txn.type === "withdrawal")
               .slice(0, 5)
               .map((txn) => (
                 <li key={txn.id} className="p-2 border-b last:border-none">
-                  <p className="text-gray-800">GHC {txn.amount} - {txn.status}</p>
+                  <p className="text-gray-800">
+                    GHC {txn.amount} - {txn.status}
+                  </p>
                   <p className="text-gray-500 text-sm">{txn.date}</p>
                 </li>
               ))}
@@ -130,7 +142,10 @@ const Withdrawals = () => {
 
       {/* Footer */}
       <footer className="mt-8 text-center text-gray-500 text-sm">
-        <p>Need help? <a href="#" className="text-blue-500">Contact Support</a> | <a href="#" className="text-blue-500">FAQs</a></p>
+        <p>
+          Need help? <a href="#" className="text-blue-500">Contact Support</a> |{" "}
+          <a href="#" className="text-blue-500">FAQs</a>
+        </p>
         <p>All transactions are secured with SSL encryption.</p>
       </footer>
     </div>

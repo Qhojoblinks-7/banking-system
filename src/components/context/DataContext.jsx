@@ -70,7 +70,6 @@ export const DataProvider = ({ children }) => {
   };
 
   // Fetch functions for various data endpoints
-
   const fetchUserData = async () => {
     try {
       const response = await axios.get('/api/user');
@@ -214,6 +213,23 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  // New function: Withdraw funds via the /api/withdraw endpoint
+  const withdrawFunds = async (withdrawalData) => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/api/withdraw', withdrawalData);
+      // Refresh balance and transactions after a withdrawal
+      fetchBalance();
+      fetchTransactions();
+      return response.data;
+    } catch (error) {
+      console.error('Withdraw funds error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -241,6 +257,7 @@ export const DataProvider = ({ children }) => {
         initiateTransfer,
         addExpenditure,
         addInvestment,
+        withdrawFunds, // Expose withdrawFunds function
       }}
     >
       {children}
