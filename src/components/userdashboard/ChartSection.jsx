@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { useUser } from "../context/DataContext"; // Import global user context
+import { useData } from "../context/DataContext"; // Use global DataContext
 import Chart from "chart.js/auto";
 import axios from "axios";
 
 const ChartSection = () => {
-  const { token } = useUser(); // Get authentication token
+  const { token } = useData(); // Get authentication token from DataContext
   const lineChartRef = useRef(null);
   const [exchangeRates, setExchangeRates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +16,6 @@ const ChartSection = () => {
 
       try {
         setLoading(true);
-
         // Fetch real-time exchange rate data
         const response = await axios.get("/api/exchange-rates", {
           headers: { Authorization: `Bearer ${token}` },
@@ -36,7 +35,7 @@ const ChartSection = () => {
     };
 
     fetchExchangeRates();
-  }, [token]); // Fetch data when the user logs in
+  }, [token]);
 
   useEffect(() => {
     if (exchangeRates.length === 0 || !lineChartRef.current) return;
@@ -64,7 +63,7 @@ const ChartSection = () => {
         ],
       },
     });
-  }, [exchangeRates]); // Update chart when data changes
+  }, [exchangeRates]);
 
   if (loading) {
     return <div className="text-center text-gray-500">Loading exchange rate trends...</div>;
