@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Chart from "chart.js/auto";
-import logo from "../assets/Layer 2.png";
-import userProfilePic from "../assets/avatars-3-d-avatar-210.png"; // Adjust path as needed
+import logo from "../../assets/Layer 2.png";
+import userProfilePic from "../../assets/avatars-3-d-avatar-210.png"; // Adjust path as needed
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
   faBars, 

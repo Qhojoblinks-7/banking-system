@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FaUniversity, FaRegCreditCard, FaMobileAlt } from "react-icons/fa";
-import { useUser } from "../components/UserContext"; // Import global user context
-import logo from "../assets/Layer 2.png";
+import { useData } from "../context/DataContext"; // Use global DataContext
+import logo from "../../assets/Layer 2.png";
 
 // Mock bank options
 const banks = [
@@ -11,7 +11,7 @@ const banks = [
 ];
 
 const TransferFunds = () => {
-  const { user, updateTransactions } = useUser(); // Access user context & update function
+  const { user, updateTransactions } = useData(); // Access global data & update function
   const [recipientName, setRecipientName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [bank, setBank] = useState("");
@@ -66,7 +66,7 @@ const TransferFunds = () => {
     setTransactionStatus("Processing transaction...");
 
     setTimeout(() => {
-      // Simulate transaction update in UserContext
+      // Simulate transaction update in global DataContext
       const newTransaction = {
         transaction_id: Date.now(),
         date: new Date().toLocaleDateString(),
@@ -93,7 +93,9 @@ const TransferFunds = () => {
 
         {/* Error or Success Messages */}
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-        {transactionStatus && <p className="text-green-500 text-sm text-center">{transactionStatus}</p>}
+        {transactionStatus && (
+          <p className="text-green-500 text-sm text-center">{transactionStatus}</p>
+        )}
 
         {/* Transfer Form */}
         <form onSubmit={handleTransfer} className="space-y-4">
@@ -214,7 +216,10 @@ const TransferFunds = () => {
                 maxLength="6"
                 required
               />
-              <button onClick={confirmTransfer} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md">
+              <button
+                onClick={confirmTransfer}
+                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md"
+              >
                 Confirm Transfer
               </button>
             </div>

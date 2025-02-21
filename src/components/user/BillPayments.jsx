@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useData } from "../context/DataContext"; // Use the global DataContext
-import logo from "../assets/Layer 2.png"; // Ensure this path is correct
+import logo from "../../assets/Layer 2.png"; // Import the bill payments logo
 
 // Payment Card Component
 const PaymentCard = ({ title, provider, link }) => (

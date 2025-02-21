@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../context/DataContext"; // Use global DataContext
-import userProfilePic from "../assets/avatars-3-d-avatar-210.png";
-import CollapsibleDetails from "./CollapsibleDetails"; // Assuming this component exists
+import userProfilePic from "../../assets/avatars-3-d-avatar-210.png";
 
 const UserAccountOverview = () => {
   const { user, fetchUserData } = useData(); // Get global user data and fetch function

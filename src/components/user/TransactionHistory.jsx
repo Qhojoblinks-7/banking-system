@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useData } from "../context/DataContext"; // Use global DataContext
-import userProfilePic from "../assets/avatars-3-d-avatar-210.png"; // Ensure path is correct
+import userProfilePic from "../../assets/avatars-3-d-avatar-210.png"; // Ensure path is correct
 
 const TransactionHistory = () => {
   const { user, token, transactions, fetchTransactions } = useData();
