@@ -1,32 +1,27 @@
 import { useState, useEffect } from "react";
-import { useUser } from "../components/UserContext"; // Import global user context
-import axios from "axios";
+import { useData } from "../context/DataContext"; // Use global DataContext
 
 const Investments = () => {
-  const { user, token } = useUser(); // Get user data and token from context
-  const [investments, setInvestments] = useState(user?.investments || []);
+  const {
+    user,
+    token,
+    investments,
+    addInvestment,
+    fetchInvestmentOptions,
+    investmentOptions,
+  } = useData(); // Retrieve global state and functions
+
   const [amount, setAmount] = useState("");
   const [investmentType, setInvestmentType] = useState("Fixed Deposit");
   const [duration, setDuration] = useState(12); // Default 12 months
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [investmentOptions, setInvestmentOptions] = useState([]);
 
   useEffect(() => {
-    if (!user || !token) return;
-    fetchInvestmentOptions();
-  }, [user, token]);
-
-  const fetchInvestmentOptions = async () => {
-    try {
-      const response = await axios.get("/api/investment-options", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setInvestmentOptions(response.data.options || []);
-    } catch (error) {
-      console.error("Error fetching investment options:", error);
+    if (user && token) {
+      fetchInvestmentOptions();
     }
-  };
+  }, [user, token, fetchInvestmentOptions]);
 
   const handleCreateInvestment = async (e) => {
     e.preventDefault();
@@ -35,26 +30,17 @@ const Investments = () => {
       return;
     }
     setLoading(true);
-
     try {
-      const response = await axios.post(
-        "/api/investments",
-        {
-          user_id: user.user_id, // Get user ID from context
-          amount,
-          investment_type: investmentType,
-          duration,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const payload = {
+        user_id: user.user_id,
+        amount: Number(amount),
+        investment_type: investmentType,
+        duration: Number(duration),
+      };
 
+      await addInvestment(payload);
       setMessage("✅ Investment Created Successfully!");
       setAmount("");
-
-      // Update investments globally
-      setInvestments((prevInvestments) => [...prevInvestments, response.data.investment]);
     } catch (error) {
       setMessage("❌ Failed to create investment.");
     } finally {
