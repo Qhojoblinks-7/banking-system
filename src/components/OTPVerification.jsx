@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../components/UserContext"; // Import global user context
+import { useData } from "../context/DataContext"; // Use global DataContext
 import axios from "axios";
 import Overlay from "./Overlay"; // Assuming an Overlay component exists
 
 const OTPVerification = () => {
-  const { login } = useUser(); // Use global login function
+  const { login } = useData(); // Use global login function from DataContext
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -21,8 +21,10 @@ const OTPVerification = () => {
       const response = await axios.post("/api/verify-otp", { email, otp });
       setMessage(response.data.message);
 
-      if (response.data.user) {
-        login(response.data.user, response.data.token); // Store user session globally
+      // If the verification returns user and token data, update the global session
+      if (response.data.user && response.data.token) {
+        // The login function in DataContext should be adapted to accept user and token directly.
+        login(response.data.user, response.data.token);
         navigate("/user-account-overview"); // Redirect to dashboard
       }
     } catch (error) {
@@ -38,7 +40,13 @@ const OTPVerification = () => {
       
       {loading && <Overlay message="Verifying OTP, please wait..." />}
       {message && (
-        <div className={`mb-4 p-3 rounded text-center ${message.includes("failed") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+        <div
+          className={`mb-4 p-3 rounded text-center ${
+            message.toLowerCase().includes("failed")
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700"
+          }`}
+        >
           {message}
         </div>
       )}
