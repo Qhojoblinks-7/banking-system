@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../components/UserContext"; // Import global user context
+import { useData } from "../context/DataContext"; // Use global DataContext
 import logo from "../assets/Layer 2.png";
 import OTPVerification from "./OTPVerification";
-import { supabase } from "../supabaseClient";
 
 // Multi-step form configuration for sign-up
 const stepsConfig = [
@@ -19,12 +18,13 @@ const stepsConfig = [
 ];
 
 const CreateAccount = () => {
-  const { login } = useUser(); // Use global login function from context
+  // Use register and login functions from the global context
+  const { login, register } = useData();
   const navigate = useNavigate();
-  
+
   // Toggle between Sign Up and Sign In forms
   const [isSignup, setIsSignup] = useState(true);
-  
+
   // Multi-step form state for registration
   const [currentStep, setCurrentStep] = useState(0);
   const [processing, setProcessing] = useState(false);
@@ -40,31 +40,31 @@ const CreateAccount = () => {
     password: "",
     confirm_password: "",
   });
-  
+
   // State to handle OTP verification
   const [isOtpVerification, setIsOtpVerification] = useState(false);
-  
+
   // Login form state (for the sign-in view)
   const [loginData, setLoginData] = useState({ username: "", password: "" });
-  
+
   // Handle input changes for registration form
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   // Handle input changes for login form
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
     setLoginData((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   // Show alert messages for 5 seconds
   const showAlert = (message, classes) => {
     setAlert({ message, classes, visible: true });
     setTimeout(() => setAlert({ message: "", classes: "", visible: false }), 5000);
   };
-  
+
   // Validate the current step's field
   const validateStep = () => {
     const currentField = stepsConfig[currentStep];
@@ -74,21 +74,21 @@ const CreateAccount = () => {
     }
     return true;
   };
-  
+
   // Navigate to the next step
   const handleNext = () => {
     if (validateStep() && currentStep < stepsConfig.length - 1) {
       setCurrentStep((prev) => prev + 1);
     }
   };
-  
+
   // Navigate to the previous step
   const handlePrev = () => {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     }
   };
-  
+
   // Handle registration submission (Sign Up)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,24 +98,9 @@ const CreateAccount = () => {
     }
     setProcessing(true);
     try {
-      // Insert new user record into Supabase (ensure your table "user_accounts" exists)
-      const { error, data } = await supabase
-        .from("user_accounts")
-        .insert([
-          {
-            full_name: formData.full_name,
-            email: formData.email,
-            phone_number: formData.phone_number,
-            date_of_birth: formData.date_of_birth,
-            residential_address: formData.residential_address,
-            account_type: formData.account_type,
-            username: formData.username,
-            password: formData.password, // In production, ensure this is securely hashed on the backend
-          },
-        ])
-        .single();
-      if (error) throw error;
-  
+      // Remove confirm_password before sending data
+      const { confirm_password, ...registrationData } = formData;
+      const response = await register(registrationData);
       showAlert("Registration successful! Please verify your email.", "bg-green-100 text-green-700");
       setIsOtpVerification(true);
     } catch (error) {
@@ -125,36 +110,27 @@ const CreateAccount = () => {
       setProcessing(false);
     }
   };
-  
+
   // Handle login submission (Sign In)
   const handleLogin = async (e) => {
     e.preventDefault();
     setProcessing(true);
     try {
-      const { data, error } = await supabase
-        .from("user_accounts")
-        .select("*")
-        .eq("username", loginData.username)
-        .eq("password", loginData.password)
-        .single();
-      if (error || !data) {
-        showAlert("Invalid username or password.", "bg-red-100 text-red-700");
-      } else {
-        showAlert("Login successful! Redirecting...", "bg-green-100 text-green-700");
-        setTimeout(() => {
-          navigate("/user-account-overview", { state: { user: data } });
-        }, 2000);
-      }
+      const response = await login(loginData.username, loginData.password);
+      showAlert("Login successful! Redirecting...", "bg-green-100 text-green-700");
+      setTimeout(() => {
+        navigate("/user-account-overview", { state: { user: response.user } });
+      }, 2000);
     } catch (error) {
-      showAlert(`Error: ${error.message}`, "bg-red-100 text-red-700");
+      showAlert("Invalid username or password.", "bg-red-100 text-red-700");
     } finally {
       setProcessing(false);
     }
   };
-  
+
   // Toggle between Sign Up and Sign In forms
   const toggleForm = () => setIsSignup((prev) => !prev);
-  
+
   // Handle OTP verification success
   const handleOtpSuccess = (data) => {
     showAlert("OTP verified successfully! Redirecting...", "bg-green-100 text-green-700");
@@ -162,7 +138,7 @@ const CreateAccount = () => {
       navigate("/user-account-overview", { state: { user: data } });
     }, 2000);
   };
-  
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-sky-50 font-sans p-4 relative">
       {processing && (
