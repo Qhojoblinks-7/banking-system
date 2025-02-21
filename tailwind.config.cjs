@@ -1,5 +1,8 @@
 module.exports = {
-  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./index.html", // include index.html if it exists in the root
+    "./src/**/*.{js,jsx,ts,tsx,html,cjs}"
+  ],
   theme: {
     extend: {
       animation: {
@@ -7,17 +10,11 @@ module.exports = {
       },
       keyframes: {
         fadeIn: {
-          "0%": { 
-            opacity: 0, 
-            transform: "translateY(20px)" 
-          },
-          "100%": { 
-            opacity: 1, 
-            transform: "translateY(0)" 
-          },
+          "0%": { opacity: 0, transform: "translateY(20px)" },
+          "100%": { opacity: 1, transform: "translateY(0)" },
         },
       },
     },
   },
-  plugins: [],
+  plugins: [false],
 };
