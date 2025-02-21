@@ -9,8 +9,12 @@ import {
   faCog 
 } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
+import { useData } from "../context/DataContext"; // Updated to use global DataContext
 
 const QuickActions = () => {
+  // Optionally, if needed, you can destructure user info:
+  const { user } = useData();
+
   return (
     <section className="mt-8 bg-sky-100 w-full p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-gray-900 mb-4">Quick Actions</h2>
@@ -33,7 +37,7 @@ const QuickActions = () => {
         </button>
         <button className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow-md transition">
           <FontAwesomeIcon icon={faMoneyCheckAlt} className="mr-2" />
-          <Link to="loanapplication">Loan Application</Link>
+          <Link to="/loanapplication">Loan Application</Link>
         </button>
         <button className="flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg shadow-md transition">
           <FontAwesomeIcon icon={faCog} className="mr-2" />
