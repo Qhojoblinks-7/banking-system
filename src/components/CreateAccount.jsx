@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../components/UserContext"; // Import global user context
 import logo from "../assets/Layer 2.png";
@@ -41,18 +41,45 @@ const CreateAccount = () => {
   // Retrieve reCAPTCHA site key from environment variables
   const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_API_KEY;
 
-  // Helper to get reCAPTCHA token
+  // Dynamically load the reCAPTCHA script if not already loaded
+  useEffect(() => {
+    if (!window.grecaptcha) {
+      const script = document.createElement("script");
+      script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        console.log("reCAPTCHA script loaded");
+      };
+      script.onerror = () => {
+        console.error("Failed to load reCAPTCHA script");
+      };
+      document.body.appendChild(script);
+    }
+  }, [recaptchaSiteKey]);
+
+  // Helper function to get a reCAPTCHA token
   const getCaptchaToken = () => {
     return new Promise((resolve, reject) => {
       if (!window.grecaptcha) {
-        reject(new Error("reCAPTCHA not loaded"));
+        return reject(new Error("reCAPTCHA not loaded"));
       }
-      window.grecaptcha.ready(() => {
+      // Use grecaptcha.ready to ensure reCAPTCHA is ready
+      if (typeof window.grecaptcha.ready === "function") {
+        window.grecaptcha.ready(() => {
+          window.grecaptcha
+            .execute(recaptchaSiteKey, { action: "signup" })
+            .then(resolve)
+            .catch(reject);
+        });
+      } else if (typeof window.grecaptcha.execute === "function") {
         window.grecaptcha
           .execute(recaptchaSiteKey, { action: "signup" })
           .then(resolve)
           .catch(reject);
-      });
+      } else {
+        reject(new Error("reCAPTCHA is not properly loaded"));
+      }
     });
   };
 
@@ -93,9 +120,7 @@ const CreateAccount = () => {
     }
     setProcessing(true);
     try {
-      // Get reCAPTCHA token
       const captchaToken = await getCaptchaToken();
-
       const { data, error } = await supabase.auth.signUp(
         {
           email: formData.email,
