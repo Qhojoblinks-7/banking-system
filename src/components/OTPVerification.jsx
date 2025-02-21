@@ -1,63 +1,77 @@
-// OTPVerification.jsx
-import { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient";
-import Overlay from "./Overlay";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../components/UserContext"; // Import global user context
+import axios from "axios";
+import Overlay from "./Overlay"; // Assuming an Overlay component exists
 
-/**
- * OTPVerification Component
- * 
- * Instead of displaying a form to enter a 6-digit OTP, this component shows a processing overlay
- * while it periodically polls Supabase for an active session (i.e. the user has clicked the verification link).
- * Once the session is detected, it calls the onSuccess callback.
- * 
- * @param {Object} props - Component props
- * @param {function} props.onSuccess - Callback function to call upon successful verification
- */
-const OTPVerification = ({ onSuccess }) => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+const OTPVerification = () => {
+  const { login } = useUser(); // Use global login function
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        // Get the current auth session from Supabase
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          setError(error.message);
-          setLoading(false);
-          return;
-        }
-        if (data?.session) {
-          // Session exists: user is verified
-          setLoading(false);
-          onSuccess(data.session);
-        } else {
-          // No session yet; poll again in 2 seconds
-          setTimeout(checkSession, 2000);
-        }
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await axios.post("/api/verify-otp", { email, otp });
+      setMessage(response.data.message);
+
+      if (response.data.user) {
+        login(response.data.user, response.data.token); // Store user session globally
+        navigate("/user-account-overview"); // Redirect to dashboard
       }
-    };
-
-    checkSession();
-  }, [onSuccess]);
+    } catch (error) {
+      setMessage(error.response?.data?.error || "OTP verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-sky-100 p-4">
-      {/* Show overlay while loading */}
-      <Overlay visible={loading} />
-      {!loading && error && (
-        <p className="text-red-500 text-center mt-4" role="alert">
-          Error: {error}
-        </p>
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-center mb-4">OTP Verification</h2>
+      
+      {loading && <Overlay message="Verifying OTP, please wait..." />}
+      {message && (
+        <div className={`mb-4 p-3 rounded text-center ${message.includes("failed") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+          {message}
+        </div>
       )}
-      {!loading && !error && (
-        <p className="text-green-600 text-center mt-4 text-xl">
-          Verification complete. Redirecting...
-        </p>
-      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-gray-700 mb-1">Email:</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full border border-gray-300 rounded px-3 py-2 focus:ring focus:ring-blue-300"
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700 mb-1">OTP Code:</label>
+          <input
+            type="text"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            required
+            className="w-full border border-gray-300 rounded px-3 py-2 focus:ring focus:ring-blue-300"
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white font-semibold rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? "Verifying..." : "Verify OTP"}
+        </button>
+      </form>
     </div>
   );
 };

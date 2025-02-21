@@ -1,54 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useUser } from "../components/UserContext"; // Import Context API
 import axios from "axios";
 
 const Withdrawals = () => {
-  const [accounts, setAccounts] = useState([]);
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  const [balance, setBalance] = useState(0);
+  const { user, transactions, fetchUserData, fetchTransactions } = useUser(); // Use Context
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawMethod, setWithdrawMethod] = useState("ATM Withdrawal");
   const [withdrawDate, setWithdrawDate] = useState("");
-  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchAccounts();
-    fetchTransactions();
-  }, []);
-
-  const fetchAccounts = async () => {
-    try {
-      const response = await axios.get("/api/balance");
-      setAccounts(response.data.accounts || []);
-    } catch (err) {
-      console.error("Error fetching accounts:", err);
-    }
-  };
-
-  const fetchTransactions = async () => {
-    try {
-      const userId = "USER_ID_HERE"; // Replace with actual user ID
-      const response = await axios.get(`/api/transactions/${userId}`);
-      setTransactions(response.data.transactions || []);
-    } catch (err) {
-      console.error("Error fetching transactions:", err);
-    }
-  };
-
-  const handleAccountChange = (e) => {
-    const selected = accounts.find(acc => acc.account_number === e.target.value);
-    setSelectedAccount(selected);
-    setBalance(selected ? selected.balance : 0);
-  };
+  // Select first account by default
+  const selectedAccount = user.accounts?.[0] || null;
+  const balance = selectedAccount ? selectedAccount.balance : 0;
 
   const handleWithdrawal = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
-    
-    if (!selectedAccount) return setError("Please select an account.");
+
+    if (!selectedAccount) return setError("No account found.");
     if (withdrawAmount <= 0 || withdrawAmount > balance) return setError("Invalid withdrawal amount.");
 
     setLoading(true);
@@ -60,13 +32,13 @@ const Withdrawals = () => {
         scheduled_date: withdrawDate || null,
       });
 
-      setMessage("Withdrawal successful!");
+      setMessage("✅ Withdrawal successful!");
       setWithdrawAmount("");
       setWithdrawDate("");
-      fetchAccounts();
-      fetchTransactions();
+      fetchUserData(); // Refresh balance
+      fetchTransactions(); // Refresh transactions
     } catch (err) {
-      setError("Withdrawal failed. Please try again.");
+      setError("❌ Withdrawal failed. Please try again.");
     }
     setLoading(false);
   };
@@ -87,22 +59,15 @@ const Withdrawals = () => {
         {message && <p className="text-green-500">{message}</p>}
 
         <form onSubmit={handleWithdrawal}>
-          {/* Account Selection */}
-          <label className="block text-gray-600">Select Account</label>
-          <select
-            onChange={handleAccountChange}
-            className="w-full p-2 border rounded-md mt-2 mb-4"
-          >
-            <option value="">-- Select an account --</option>
-            {accounts.map((acc) => (
-              <option key={acc.account_number} value={acc.account_number}>
-                {acc.account_type} - {acc.account_number} (Balance: ${acc.balance})
-              </option>
-            ))}
-          </select>
+          {/* Selected Account Info */}
+          <div className="p-3 bg-gray-50 rounded-md shadow-sm">
+            <h3 className="text-gray-700 font-semibold">Selected Account</h3>
+            <p className="text-sm text-gray-600">{selectedAccount?.account_type} - {selectedAccount?.account_number}</p>
+            <p className="text-green-700 font-bold">Balance: GHC {balance.toFixed(2)}</p>
+          </div>
 
           {/* Withdrawal Amount */}
-          <label className="block text-gray-600">Amount</label>
+          <label className="block text-gray-600 mt-4">Amount</label>
           <input
             type="number"
             value={withdrawAmount}
@@ -143,22 +108,22 @@ const Withdrawals = () => {
         </form>
       </div>
 
-      {/* Account Summary Sidebar */}
+      {/* Recent Transactions */}
       <aside className="mt-8 bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold">Account Summary</h2>
-        <p className="text-gray-600">Current Balance: <span className="font-bold">${balance}</span></p>
-
-        <h3 className="text-lg font-semibold mt-4">Recent Withdrawals</h3>
+        <h2 className="text-xl font-semibold">Recent Withdrawals</h2>
         {transactions.length === 0 ? (
           <p className="text-gray-500">No recent transactions.</p>
         ) : (
           <ul className="mt-2">
-            {transactions.slice(0, 5).map((txn) => (
-              <li key={txn.id} className="p-2 border-b last:border-none">
-                <p className="text-gray-800">${txn.amount} - {txn.status}</p>
-                <p className="text-gray-500 text-sm">{txn.date}</p>
-              </li>
-            ))}
+            {transactions
+              .filter(txn => txn.type === "withdrawal")
+              .slice(0, 5)
+              .map((txn) => (
+                <li key={txn.id} className="p-2 border-b last:border-none">
+                  <p className="text-gray-800">GHC {txn.amount} - {txn.status}</p>
+                  <p className="text-gray-500 text-sm">{txn.date}</p>
+                </li>
+              ))}
           </ul>
         )}
       </aside>

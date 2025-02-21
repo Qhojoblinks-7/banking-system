@@ -1,78 +1,83 @@
-import React, { useState } from 'react';
+import { useState } from "react";
+import { useUser } from "../components/UserContext"; // Import global user context
 
 const Settings = () => {
-  const [theme, setTheme] = useState('light');
+  const { user, token, updateUser, toggleTheme } = useUser(); // Access global user state
   const [alert, setAlert] = useState(null);
-  const [profile, setProfile] = useState({ name: '', email: '', phone: '' });
-  const [password, setPassword] = useState({ current: '', new: '' });
-  const [notifications, setNotifications] = useState({ email: true, sms: false });
-  const [securityQuestions, setSecurityQuestions] = useState({ question1: '', answer1: '', question2: '', answer2: '' });
-
-  const handleThemeToggle = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark');
-    setAlert({ type: 'success', message: `Theme switched to ${newTheme}` });
-  };
+  const [profile, setProfile] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+  });
+  const [password, setPassword] = useState({ current: "", new: "" });
+  const [notifications, setNotifications] = useState(user?.notifications || { email: true, sms: false });
+  const [securityQuestions, setSecurityQuestions] = useState(user?.securityQuestions || { question1: "", answer1: "", question2: "", answer2: "" });
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/update-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/update-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(profile),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Profile update failed');
-      setAlert({ type: 'success', message: 'Profile updated successfully' });
+      if (!response.ok) throw new Error(data.error || "Profile update failed");
+
+      updateUser({ ...user, ...profile }); // Update user state globally
+      setAlert({ type: "success", message: "Profile updated successfully" });
     } catch (error) {
-      setAlert({ type: 'error', message: error.message });
+      setAlert({ type: "error", message: error.message });
     }
   };
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(password),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Password update failed');
-      setAlert({ type: 'success', message: 'Password changed successfully' });
-      setPassword({ current: '', new: '' });
+      if (!response.ok) throw new Error(data.error || "Password update failed");
+
+      setAlert({ type: "success", message: "Password changed successfully" });
+      setPassword({ current: "", new: "" });
     } catch (error) {
-      setAlert({ type: 'error', message: error.message });
+      setAlert({ type: "error", message: error.message });
     }
   };
 
   const handleNotificationsToggle = (e) => {
-    setNotifications({ ...notifications, [e.target.name]: e.target.checked });
+    const updatedNotifications = { ...notifications, [e.target.name]: e.target.checked };
+    setNotifications(updatedNotifications);
+    updateUser({ ...user, notifications: updatedNotifications }); // Update in global state
   };
 
   const handleSecurityQuestionsSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/update-security-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/update-security-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(securityQuestions),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Security questions update failed');
-      setAlert({ type: 'success', message: 'Security questions updated successfully' });
+      if (!response.ok) throw new Error(data.error || "Security questions update failed");
+
+      setAlert({ type: "success", message: "Security questions updated successfully" });
+      updateUser({ ...user, securityQuestions }); // Update in global state
     } catch (error) {
-      setAlert({ type: 'error', message: error.message });
+      setAlert({ type: "error", message: error.message });
     }
   };
 
   return (
-    <div className="p-6 max-w-lg mx-auto" style={{ color: 'emerald', backgroundColor: 'sky' }}>
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
+    <div className="p-6 max-w-lg mx-auto bg-white shadow-lg rounded-lg">
+      <h1 className="text-2xl font-bold mb-4 text-center">Settings</h1>
       {alert && (
-        <div className={`p-3 mb-4 text-center rounded ${alert.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+        <div className={`p-3 mb-4 text-center rounded ${alert.type === "error" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
           {alert.message}
         </div>
       )}
@@ -122,8 +127,8 @@ const Settings = () => {
       {/* Theme Toggle */}
       <div className="mt-6 text-center">
         <h2 className="text-xl font-semibold mb-2">Appearance</h2>
-        <button onClick={handleThemeToggle} className="bg-gray-600 text-white px-4 py-2 rounded">
-          Toggle {theme === 'light' ? 'Dark' : 'Light'} Mode
+        <button onClick={toggleTheme} className="bg-gray-600 text-white px-4 py-2 rounded">
+          Toggle Theme
         </button>
       </div>
     </div>
