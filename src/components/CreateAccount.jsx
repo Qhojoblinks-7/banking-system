@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"; // Importing useNavigate for nav
 import { useData } from "./context/DataContext"; // Use global DataContext
 import logo from "../assets/Layer 2.png";
 import OTPVerification from "./OTPVerification";
-import ReCAPTCHA from "react-google-recaptcha";
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 // Multi-step form configuration for sign-up
 const stepsConfig = [
@@ -147,173 +147,183 @@ const CreateAccount = () => {
     }, 2000);
   };
 
+  const { executeRecaptcha } = useGoogleReCaptcha();
+
+  const handleReCaptchaVerify = async () => {
+    if (!executeRecaptcha) {
+      console.log("Execute recaptcha not yet available");
+      return;
+    }
+    const token = await executeRecaptcha("register");
+    setCaptchaToken(token);
+  };
+
   return ( 
-    <div className="min-h-screen flex flex-col justify-center items-center bg-sky-50 font-sans p-4 relative">
-      {processing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <img src={logo} alt="Processing..." className="w-24 h-24 animate-spin" />
-        </div>
-      )}
-      {isOtpVerification ? ( 
-        <OTPVerification email={formData.email} onSuccess={handleOtpSuccess} />
-      ) : (
-        <>
-          {isSignup ? ( 
-            <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
-              <div className="mb-4 text-center">
-                <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
-                <h1 className="text-2xl font-bold text-gray-800">Create Account</h1>
-              </div>
-              {alert.visible && (
-                <div className={`mt-4 p-3 rounded text-center ${alert.classes}`}>
-                  {alert.message}
+    <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_API_KEY}>
+      <div className="min-h-screen flex flex-col justify-center items-center bg-sky-50 font-sans p-4 relative">
+        {processing && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <img src={logo} alt="Processing..." className="w-24 h-24 animate-spin" />
+          </div>
+        )}
+        {isOtpVerification ? ( 
+          <OTPVerification email={formData.email} onSuccess={handleOtpSuccess} />
+        ) : (
+          <>
+            {isSignup ? ( 
+              <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
+                <div className="mb-4 text-center">
+                  <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
+                  <h1 className="text-2xl font-bold text-gray-800">Create Account</h1>
                 </div>
-              )}
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-1 bg-gradient-to-r from-blue-400 via-blue-300 to-green-400"
-                    style={{ width: `${((currentStep + 1) / stepsConfig.length) * 100}%`, transition: "width 0.5s ease-in-out" }}
-                  ></div>
-                </div>
-              </div>
-              {/* Registration Form */}
-              <form onSubmit={handleSubmit} className="space-y-4"> 
-                {stepsConfig.map((step, index) => (
-                  <div key={step.id} className={index === currentStep ? "" : "hidden"}>
-                    <label htmlFor={step.id} className="block text-gray-700 font-medium mb-1">
-                      {step.label}:
-                    </label>
-                    {step.type !== "select" ? (
-                      <input
-                        type={step.type}
-                        id={step.id}
-                        name={step.name}
-                        value={formData[step.name]}
-                        onChange={handleChange}
-                        placeholder={step.placeholder || ""}
-                        required
-                        className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
-                      />
-                    ) : (
-                      <select
-                        id={step.id}
-                        name={step.name}
-                        value={formData[step.name]}
-                        onChange={handleChange}
-                        required
-                        className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
-                      >
-                        {step.options.map((option, idx) => (
-                          <option key={idx} value={option} disabled={option === ""}>
-                            {option === "" ? "Select your account type" : option}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                {alert.visible && (
+                  <div className={`mt-4 p-3 rounded text-center ${alert.classes}`}>
+                    {alert.message}
                   </div>
-                ))}
-                <div className="flex space-x-2">
-                  {currentStep > 0 && (
+                )}
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-1 bg-gradient-to-r from-blue-400 via-blue-300 to-green-400"
+                      style={{ width: `${((currentStep + 1) / stepsConfig.length) * 100}%`, transition: "width 0.5s ease-in-out" }}
+                    ></div>
+                  </div>
+                </div>
+                {/* Registration Form */}
+                <form onSubmit={handleSubmit} className="space-y-4"> 
+                  {stepsConfig.map((step, index) => (
+                    <div key={step.id} className={index === currentStep ? "" : "hidden"}>
+                      <label htmlFor={step.id} className="block text-gray-700 font-medium mb-1">
+                        {step.label}:
+                      </label>
+                      {step.type !== "select" ? (
+                        <input
+                          type={step.type}
+                          id={step.id}
+                          name={step.name}
+                          value={formData[step.name]}
+                          onChange={handleChange}
+                          placeholder={step.placeholder || ""}
+                          required
+                          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
+                        />
+                      ) : (
+                        <select
+                          id={step.id}
+                          name={step.name}
+                          value={formData[step.name]}
+                          onChange={handleChange}
+                          required
+                          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
+                        >
+                          {step.options.map((option, idx) => (
+                            <option key={idx} value={option} disabled={option === ""}>
+                              {option === "" ? "Select your account type" : option}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ))}
+                  <div className="flex space-x-2">
+                    {currentStep > 0 && (
+                      <button
+                        type="button"
+                        onClick={handlePrev}
+                        className="bg-gray-500 text-white font-semibold rounded px-4 py-2 hover:bg-gray-600"
+                      >
+                        Previous
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={handlePrev}
-                      className="bg-gray-500 text-white font-semibold rounded px-4 py-2 hover:bg-gray-600"
+                      onClick={() => { handleNext(); handleReCaptchaVerify(); }}
+                      className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
                     >
-                      Previous
+                      Next
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
-                  >
-                    Next
+                    {currentStep === stepsConfig.length - 1 && (
+                      <button
+                        type="submit"
+                        className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
+                        onClick={handleReCaptchaVerify}
+                      >
+                        Create Account
+                      </button>
+                    )}
+                  </div>
+                </form>
+                <p className="text-center text-gray-600 mt-4">
+                  Already have an account?{" "}
+                  <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
+                    Sign In
                   </button>
-                  {currentStep === stepsConfig.length - 1 && (
+                </p>
+              </div>
+            ) : (
+              <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
+                <div className="mb-4 text-center">
+                  <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
+                  <h1 className="text-2xl font-bold text-gray-800">Sign In</h1>
+                </div>
+                {alert.visible && (
+                  <div className={`mt-4 p-3 rounded text-center ${alert.classes}`}>
+                    {alert.message}
+                  </div>
+                )}
+                <form onSubmit={handleLogin} className="space-y-4"> 
+                  <div>
+                    <label htmlFor="loginUsername" className="block text-gray-700 font-medium mb-1">
+                      Username:
+                    </label>
+                    <input
+                      type="text"
+                      id="loginUsername"
+                      name="username"
+                      value={loginData.username}
+                      onChange={handleLoginChange}
+                      placeholder="johndoe"
+                      required
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="loginPassword" className="block text-gray-700 font-medium mb-1">
+                      Password:
+                    </label>
+                    <input
+                      type="password"
+                      id="loginPassword"
+                      name="password"
+                      value={loginData.password}
+                      onChange={handleLoginChange}
+                      placeholder="••••••••"
+                      required
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
+                    />
+                  </div>
+                  <div className="flex space-x-2">
                     <button
                       type="submit"
                       className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
                     >
-                      Create Account
+                      Login
                     </button>
-                  )}
-                </div>
-              </form>
-              <ReCAPTCHA
-                sitekey={import.meta.env.VITE_RECAPTCHA_API_KEY}
-                onChange={(token) => setCaptchaToken(token)}
-              />
-              <p className="text-center text-gray-600 mt-4">
-                Already have an account?{" "}
-                <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
-                  Sign In
-                </button>
-              </p>
-            </div>
-          ) : (
-            <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
-              <div className="mb-4 text-center">
-                <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
-                <h1 className="text-2xl font-bold text-gray-800">Sign In</h1>
-              </div>
-              {alert.visible && (
-                <div className={`mt-4 p-3 rounded text-center ${alert.classes}`}>
-                  {alert.message}
-                </div>
-              )}
-              <form onSubmit={handleLogin} className="space-y-4"> 
-                <div>
-                  <label htmlFor="loginUsername" className="block text-gray-700 font-medium mb-1">
-                    Username:
-                  </label>
-                  <input
-                    type="text"
-                    id="loginUsername"
-                    name="username"
-                    value={loginData.username}
-                    onChange={handleLoginChange}
-                    placeholder="johndoe"
-                    required
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="loginPassword" className="block text-gray-700 font-medium mb-1">
-                    Password:
-                  </label>
-                  <input
-                    type="password"
-                    id="loginPassword"
-                    name="password"
-                    value={loginData.password}
-                    onChange={handleLoginChange}
-                    placeholder="••••••••"
-                    required
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    type="submit"
-                    className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
-                  >
-                    Login
+                  </div>
+                </form>
+                <p className="text-center text-gray-600 mt-4">
+                  Don&apos;t have an account?{" "}
+                  <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
+                    Create Account
                   </button>
-                </div>
-              </form>
-              <p className="text-center text-gray-600 mt-4">
-                Don't have an account?{" "}
-                <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
-                  Create Account
-                </button>
-              </p>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </GoogleReCaptchaProvider>
   );
 };
 
