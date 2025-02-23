@@ -1,5 +1,4 @@
-// CreateAccount.jsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../components/context/DataContext"; // Use global DataContext
 import logo from "../assets/Layer 2.png";
@@ -19,7 +18,7 @@ const stepsConfig = [
   { id: "step9", label: "Confirm Password", type: "password", name: "confirm_password", placeholder: "••••••••" },
 ];
 
-// Child component that uses the hCaptcha hook
+// Child component that contains the form logic and uses HCaptcha
 const CreateAccountContent = () => {
   const { login, register } = useData(); // Use global register and login functions
   const navigate = useNavigate();
@@ -83,6 +82,10 @@ const CreateAccountContent = () => {
 
   const handleCaptchaVerify = (token) => {
     setCaptchaToken(token);
+    // If an iframe (captcha widget) is focused, blur it to avoid aria-hidden focus issues
+    if (document.activeElement && document.activeElement.tagName === "IFRAME") {
+      document.activeElement.blur();
+    }
   };
 
   const handleSubmit = async (e) => { 
@@ -229,12 +232,14 @@ const CreateAccountContent = () => {
                   )}
                 </div>
               </form>
-              <HCaptcha
-                sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
-                onVerify={handleCaptchaVerify}
-                ref={captchaRef}
-                size="invisible"
-              />
+              <div>
+                <HCaptcha
+                  sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+                  onVerify={handleCaptchaVerify}
+                  ref={captchaRef}
+                  size="invisible"
+                />
+              </div>
               <p className="text-center text-gray-600 mt-4">
                 Already have an account?{" "}
                 <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
@@ -308,9 +313,7 @@ const CreateAccountContent = () => {
 };
 
 const CreateAccount = () => {
-  return (
-    <CreateAccountContent />
-  );
+  return <CreateAccountContent />;
 };
 
 export default CreateAccount;
