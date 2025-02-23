@@ -69,17 +69,17 @@ const UserAccountOverview = () => {
             className="w-24 h-24 rounded-full mb-4 border-4 border-green-500 shadow-2xl"
           />
           <h2 className="text-2xl font-extrabold text-green-700 mb-2">
-            {user.full_name}
+            {user?.full_name || "N/A"}
           </h2>
           <p className="text-lg text-gray-600 font-medium">
-            Account Type: {user.account_type}
+            Account Type: {user?.account_type || "N/A"}
           </p>
           <p className="text-lg text-gray-600 font-medium">
-            Balance: ${Number(user.balance).toFixed(2)}
+            Balance: ${Number(user?.balance || 0).toFixed(2)}
           </p>
           <div className="mt-2 flex items-center space-x-2">
             <p className="text-gray-600 font-medium">
-              Account Number: {user.account_number || "N/A"}
+              Account Number: {user?.account_number || "N/A"}
             </p>
             <button
               onClick={copyAccountNumber}
@@ -96,10 +96,10 @@ const UserAccountOverview = () => {
           details={
             <>
               <p className="text-gray-600">
-                <span className="font-bold">Account Created:</span> {user.created_at || "N/A"}
+                <span className="font-bold">Account Created:</span> {user?.created_at || "N/A"}
               </p>
               <p className="text-gray-600">
-                <span className="font-bold">Contact:</span> {user.contact || "N/A"}
+                <span className="font-bold">Contact:</span> {user?.contact || "N/A"}
               </p>
             </>
           }
