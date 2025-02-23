@@ -1,11 +1,14 @@
 import { useData } from "../context/DataContext"; // Use global DataContext
-import { useNavigate } from "react-router-dom";
 import userProfilePic from "../../assets/avatars-3-d-avatar-210.png"; // Adjust path as needed
 import Layout from "../Layout";
+import PropTypes from 'prop-types'; // Import PropTypes for prop validation
 
 const AccountOverview = () => {
-  const { user, token } = useData(); // Access global user state from DataContext
-  const navigate = useNavigate();
+  const { user, loading } = useData(); // Access global user state from DataContext
+
+  if (loading) {
+    return <div className="text-center">Loading user details...</div>;
+  }
 
   if (!user) {
     return <div className="text-center">Loading user details...</div>;
@@ -17,16 +20,16 @@ const AccountOverview = () => {
         <div className="flex items-center space-x-4 mb-4">
           <img src={userProfilePic} alt="User Profile" className="w-16 h-16 rounded-full" />
           <div>
-            <h2 className="text-xl font-bold">{user.full_name}</h2>
-            <p>Account Number: {user.account_number}</p>
+            <h2 className="text-xl font-bold">{user?.full_name}</h2>
+            <p>Account Number: {user?.account_number}</p>
           </div>
         </div>
 
         <div className="mt-4 text-left">
           <h3 className="text-lg font-bold mb-2">Accounts</h3>
-          {user.accounts && user.accounts.length > 0 ? (
+          {user?.accounts && user.accounts.length > 0 ? (
             user.accounts.map((account) => (
-              <AccountInfo key={account.account_id} account={account} />
+              <AccountInfo key={account?.account_id} account={account} />
             ))
           ) : (
             <p>No accounts found.</p>
@@ -49,5 +52,13 @@ const AccountInfo = ({ account }) => (
     )}
   </div>
 );
+
+AccountInfo.propTypes = { 
+  account: PropTypes.shape({
+    account_type: PropTypes.string.isRequired, 
+    account_id: PropTypes.string.isRequired,
+    balance: PropTypes.number.isRequired,
+  }).isRequired,
+};
 
 export default AccountOverview;

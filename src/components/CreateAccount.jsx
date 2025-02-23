@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react"; 
+import { useNavigate } from "react-router-dom"; // Importing useNavigate for navigation
 import { useData } from "./context/DataContext"; // Use global DataContext
 import logo from "../assets/Layer 2.png";
 import OTPVerification from "./OTPVerification";
+import ReCAPTCHA from "react-google-recaptcha";
 
 // Multi-step form configuration for sign-up
 const stepsConfig = [
@@ -17,7 +18,7 @@ const stepsConfig = [
   { id: "step9", label: "Confirm Password", type: "password", name: "confirm_password", placeholder: "••••••••" },
 ];
 
-const CreateAccount = () => {
+const CreateAccount = () => { 
   // Use register and login functions from the global context
   const { login, register } = useData();
   const navigate = useNavigate();
@@ -47,14 +48,17 @@ const CreateAccount = () => {
   // Login form state (for the sign-in view)
   const [loginData, setLoginData] = useState({ username: "", password: "" });
 
+  // Captcha state
+  const [captchaToken, setCaptchaToken] = useState(null);
+
   // Handle input changes for registration form
-  const handleChange = (e) => {
+  const handleChange = (e) => { 
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Handle input changes for login form
-  const handleLoginChange = (e) => {
+  const handleLoginChange = (e) => { 
     const { name, value } = e.target;
     setLoginData((prev) => ({ ...prev, [name]: value }));
   };
@@ -66,7 +70,7 @@ const CreateAccount = () => {
   };
 
   // Validate the current step's field
-  const validateStep = () => {
+  const validateStep = () => { 
     const currentField = stepsConfig[currentStep];
     if (!formData[currentField.name]) {
       showAlert(`${currentField.label} is required.`, "bg-red-100 text-red-700");
@@ -76,31 +80,35 @@ const CreateAccount = () => {
   };
 
   // Navigate to the next step
-  const handleNext = () => {
+  const handleNext = () => { 
     if (validateStep() && currentStep < stepsConfig.length - 1) {
       setCurrentStep((prev) => prev + 1);
     }
   };
 
   // Navigate to the previous step
-  const handlePrev = () => {
+  const handlePrev = () => { 
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     }
   };
 
   // Handle registration submission (Sign Up)
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => { 
     e.preventDefault();
     if (formData.password !== formData.confirm_password) {
       showAlert("Passwords do not match!", "bg-red-100 text-red-700");
+      return;
+    }
+    if (!captchaToken) {
+      showAlert("Please complete the captcha verification.", "bg-red-100 text-red-700");
       return;
     }
     setProcessing(true);
     try {
       // Remove confirm_password before sending data
       const { confirm_password, ...registrationData } = formData;
-      const response = await register(registrationData);
+      const response = await register({ ...registrationData, captchaToken });
       showAlert("Registration successful! Please verify your email.", "bg-green-100 text-green-700");
       setIsOtpVerification(true);
     } catch (error) {
@@ -112,7 +120,7 @@ const CreateAccount = () => {
   };
 
   // Handle login submission (Sign In)
-  const handleLogin = async (e) => {
+  const handleLogin = async (e) => { 
     e.preventDefault();
     setProcessing(true);
     try {
@@ -129,7 +137,7 @@ const CreateAccount = () => {
   };
 
   // Toggle between Sign Up and Sign In forms
-  const toggleForm = () => setIsSignup((prev) => !prev);
+  const toggleForm = () => setIsSignup((prev) => !prev); 
 
   // Handle OTP verification success
   const handleOtpSuccess = (data) => {
@@ -139,18 +147,18 @@ const CreateAccount = () => {
     }, 2000);
   };
 
-  return (
+  return ( 
     <div className="min-h-screen flex flex-col justify-center items-center bg-sky-50 font-sans p-4 relative">
       {processing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <img src={logo} alt="Processing..." className="w-24 h-24 animate-spin" />
         </div>
       )}
-      {isOtpVerification ? (
+      {isOtpVerification ? ( 
         <OTPVerification email={formData.email} onSuccess={handleOtpSuccess} />
       ) : (
         <>
-          {isSignup ? (
+          {isSignup ? ( 
             <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
               <div className="mb-4 text-center">
                 <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
@@ -171,7 +179,7 @@ const CreateAccount = () => {
                 </div>
               </div>
               {/* Registration Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4"> 
                 {stepsConfig.map((step, index) => (
                   <div key={step.id} className={index === currentStep ? "" : "hidden"}>
                     <label htmlFor={step.id} className="block text-gray-700 font-medium mb-1">
@@ -233,6 +241,10 @@ const CreateAccount = () => {
                   )}
                 </div>
               </form>
+              <ReCAPTCHA
+                sitekey={import.meta.env.VITE_RECAPTCHA_API_KEY}
+                onChange={(token) => setCaptchaToken(token)}
+              />
               <p className="text-center text-gray-600 mt-4">
                 Already have an account?{" "}
                 <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
@@ -251,7 +263,7 @@ const CreateAccount = () => {
                   {alert.message}
                 </div>
               )}
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4"> 
                 <div>
                   <label htmlFor="loginUsername" className="block text-gray-700 font-medium mb-1">
                     Username:

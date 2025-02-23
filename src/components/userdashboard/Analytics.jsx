@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useData } from "../context/DataContext"; // Use global DataContext
+import  useData  from "../context/DataContext"; // Use global DataContext
 
 const Analytics = () => {
   const { token, analytics, fetchAnalytics } = useData();
@@ -25,7 +25,8 @@ const Analytics = () => {
   if (localLoading) {
     return (
       <div className="text-center text-gray-500">
-        Loading analytics data...
+        Loading analytics data, please wait...
+
       </div>
     );
   }
@@ -33,7 +34,8 @@ const Analytics = () => {
   if (error) {
     return (
       <div className="text-red-500 text-center">
-        Error: {error}
+        Error: {error}. Please try again later.
+
       </div>
     );
   }

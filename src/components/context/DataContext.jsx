@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '../../supabaseClient'; // Import Supabase client
+import PropTypes from 'prop-types'; // Import PropTypes for prop validation
 
 const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
-  // Global states
+  // Global states and prop validation
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [balance, setBalance] = useState(null);
@@ -15,10 +16,9 @@ export const DataProvider = ({ children }) => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // When token changes, set default axios header and fetch all relevant data
+  // When token changes, fetch all relevant data
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUserData();
       fetchBalance();
       fetchTransactions();
@@ -26,25 +26,116 @@ export const DataProvider = ({ children }) => {
       fetchExpenditures();
       fetchInvestments();
       fetchAnalytics();
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
     }
   }, [token]);
+
+  // Wrap other fetch functions in useCallback as well
+  const fetchUserData = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      if (error) throw error;
+      setUser(data); // Set user data from Supabase
+    } catch (error) {
+      console.error('Fetch user data error:', error);
+    }
+  }, [user]);
+
+  const fetchBalance = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('balances')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      if (error) throw error;
+      setBalance(data.balance); // Set balance from Supabase
+    } catch (error) {
+      console.error('Fetch balance error:', error);
+    }
+  }, [user]);
+
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setTransactions(data); // Set transactions from Supabase
+    } catch (error) {
+      console.error('Fetch transactions error:', error);
+    }
+  }, [user]);
+
+  const fetchLoans = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('loans')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setLoans(data); // Set loans from Supabase
+    } catch (error) {
+      console.error('Fetch loans error:', error);
+    }
+  }, [user]);
+
+  const fetchExpenditures = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('expenditures')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setExpenditures(data); // Set expenditures from Supabase
+    } catch (error) {
+      console.error('Fetch expenditures error:', error);
+    }
+  }, [user]);
+
+  const fetchInvestments = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('investments')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setInvestments(data); // Set investments from Supabase
+    } catch (error) {
+      console.error('Fetch investments error:', error);
+    }
+  }, [user]);
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('analytics')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setAnalytics(data); // Set analytics from Supabase
+    } catch (error) {
+      console.error('Fetch analytics error:', error);
+    }
+  }, [user]);
 
   // Login: authenticate and set token and user
   const login = async (email, password) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/login', { email, password });
-      setToken(response.data.token);
-      setUser(response.data.user);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      setUser(data.user);
+      localStorage.setItem('token', data.session.access_token); // Store access token
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setLoading(false); // Set loading state to false
     }
   };
 
@@ -59,96 +150,48 @@ export const DataProvider = ({ children }) => {
   const register = async (registrationData) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/register', registrationData);
-      return response.data;
+      const { data, error } = await supabase.auth.signUp({
+        email: registrationData.email,
+        password: registrationData.password,
+        options: {
+          data: {
+            full_name: registrationData.full_name,
+            phone_number: registrationData.phone_number,
+            date_of_birth: registrationData.date_of_birth,
+            residential_address: registrationData.residential_address,
+            account_type: registrationData.account_type,
+            username: registrationData.username,
+          },
+          captchaToken: registrationData.captchaToken,
+        },
+      });
+      if (error) throw error;
+      return data.user; // Return user object
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setLoading(false); // Set loading state to false
     }
   };
-
-  // Fetch functions for various data endpoints
-  const fetchUserData = async () => {
-    try {
-      const response = await axios.get('/api/user');
-      setUser(response.data.user);
-    } catch (error) {
-      console.error('Fetch user data error:', error);
-    }
-  };
-
-  const fetchBalance = async () => {
-    try {
-      const response = await axios.get('/api/balance');
-      setBalance(response.data.balance);
-    } catch (error) {
-      console.error('Fetch balance error:', error);
-    }
-  };
-
-  const fetchTransactions = async () => {
-    try {
-      const response = await axios.get('/api/transactions');
-      setTransactions(response.data.transactions);
-    } catch (error) {
-      console.error('Fetch transactions error:', error);
-    }
-  };
-
-  const fetchLoans = async () => {
-    try {
-      const response = await axios.get('/api/loans');
-      setLoans(response.data.loans);
-    } catch (error) {
-      console.error('Fetch loans error:', error);
-    }
-  };
-
-  const fetchExpenditures = async () => {
-    try {
-      const response = await axios.get('/api/expenditures');
-      setExpenditures(response.data.expenditures);
-    } catch (error) {
-      console.error('Fetch expenditures error:', error);
-    }
-  };
-
-  const fetchInvestments = async () => {
-    try {
-      const response = await axios.get('/api/investments');
-      setInvestments(response.data.investments);
-    } catch (error) {
-      console.error('Fetch investments error:', error);
-    }
-  };
-
-  const fetchAnalytics = async () => {
-    try {
-      const response = await axios.get('/api/analytics');
-      setAnalytics(response.data.analytics);
-    } catch (error) {
-      console.error('Fetch analytics error:', error);
-    }
-  };
-
-  // Update functions to add new records
 
   // Add a new transaction (e.g., deposit or debit)
   const addTransaction = async (transactionData) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/transactions', transactionData);
-      setTransactions(prev => [response.data.transaction, ...prev]);
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert(transactionData);
+      if (error) throw error;
+      setTransactions(prev => [data[0], ...prev]);
       // Optionally refresh balance after a transaction
       fetchBalance();
-      return response.data;
+      return data;
     } catch (error) {
       console.error('Add transaction error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setLoading(false); // Set loading state to false
     }
   };
 
@@ -156,9 +199,12 @@ export const DataProvider = ({ children }) => {
   const createLoan = async (loanData) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/loans', loanData);
-      setLoans(prev => [response.data.loan, ...prev]);
-      return response.data;
+      const { data, error } = await supabase
+        .from('loans')
+        .insert(loanData);
+      if (error) throw error;
+      setLoans(prev => [data[0], ...prev]);
+      return data;
     } catch (error) {
       console.error('Create loan error:', error);
       throw error;
@@ -171,10 +217,13 @@ export const DataProvider = ({ children }) => {
   const initiateTransfer = async (transferData) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/transfers', transferData);
+      const { data, error } = await supabase
+        .from('transfers')
+        .insert(transferData);
+      if (error) throw error;
       // Refresh balance as it might change after a transfer
       fetchBalance();
-      return response.data;
+      return data;
     } catch (error) {
       console.error('Initiate transfer error:', error);
       throw error;
@@ -187,43 +236,14 @@ export const DataProvider = ({ children }) => {
   const addExpenditure = async (expenditureData) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/expenditures', expenditureData);
-      setExpenditures(prev => [response.data.expenditure, ...prev]);
-      return response.data;
+      const { data, error } = await supabase
+        .from('expenditures')
+        .insert(expenditureData);
+      if (error) throw error;
+      setExpenditures(prev => [data[0], ...prev]);
+      return data;
     } catch (error) {
       console.error('Add expenditure error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Add a new investment record
-  const addInvestment = async (investmentData) => {
-    try {
-      setLoading(true);
-      const response = await axios.post('/api/investments', investmentData);
-      setInvestments(prev => [response.data.investment, ...prev]);
-      return response.data;
-    } catch (error) {
-      console.error('Add investment error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // New function: Withdraw funds via the /api/withdraw endpoint
-  const withdrawFunds = async (withdrawalData) => {
-    try {
-      setLoading(true);
-      const response = await axios.post('/api/withdraw', withdrawalData);
-      // Refresh balance and transactions after a withdrawal
-      fetchBalance();
-      fetchTransactions();
-      return response.data;
-    } catch (error) {
-      console.error('Withdraw funds error:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -245,6 +265,10 @@ export const DataProvider = ({ children }) => {
         login,
         logout,
         register,
+        addTransaction,
+        createLoan,
+        initiateTransfer,
+        addExpenditure,
         fetchUserData,
         fetchBalance,
         fetchTransactions,
@@ -252,12 +276,6 @@ export const DataProvider = ({ children }) => {
         fetchExpenditures,
         fetchInvestments,
         fetchAnalytics,
-        addTransaction,
-        createLoan,
-        initiateTransfer,
-        addExpenditure,
-        addInvestment,
-        withdrawFunds, // Expose withdrawFunds function
       }}
     >
       {children}
@@ -265,4 +283,10 @@ export const DataProvider = ({ children }) => {
   );
 };
 
+DataProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
 export const useData = () => useContext(DataContext);
+
+export default DataProvider;

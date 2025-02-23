@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { DataProvider } from './components/context/DataContext';
 import Analytics from './components/userdashboard/Analytics';
 import LoanApplication from './components/user/LoanApplication';
+import ErrorBoundary from './components/ErrorBoundary'; // Import ErrorBoundary normally
 
 // Lazy loading components for better performance
 const CreateAccount = lazy(() => import('./components/CreateAccount'));
@@ -12,7 +13,6 @@ const UserDashboard = lazy(() => import('./components/userdashboard/UserDashboar
 const AccountOverview = lazy(() => import('./components/userdashboard/AccountOverview'));
 const TransactionHistory = lazy(() => import('./components/user/TransactionHistory'));
 const TransferFunds = lazy(() => import('./components/user/TransferFunds'));
-const ErrorBoundary = lazy(() => import('./components/ErrorBoundary'));
 const Deposits = lazy(() => import('./components/user/Deposits'));
 const Withdrawals = lazy(() => import('./components/user/Withdrawals'));
 const Settings = lazy(() => import('./components/userdashboard/Settings'));
