@@ -41,12 +41,12 @@ const CreateAccountContent = () => {
 
   const captchaRef = useRef(null);
 
-  const handleChange = (e) => { 
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleLoginChange = (e) => { 
+  const handleLoginChange = (e) => {
     const { name, value } = e.target;
     setLoginData((prev) => ({ ...prev, [name]: value }));
   };
@@ -56,7 +56,7 @@ const CreateAccountContent = () => {
     setTimeout(() => setAlert({ message: "", classes: "", visible: false }), 5000);
   };
 
-  const validateStep = () => { 
+  const validateStep = () => {
     const currentField = stepsConfig[currentStep];
     if (!formData[currentField.name]) {
       showAlert(`${currentField.label} is required.`, "bg-red-100 text-red-700");
@@ -65,13 +65,13 @@ const CreateAccountContent = () => {
     return true;
   };
 
-  const handleNext = () => { 
+  const handleNext = () => {
     if (validateStep() && currentStep < stepsConfig.length - 1) {
       setCurrentStep((prev) => prev + 1);
     }
   };
 
-  const handlePrev = () => { 
+  const handlePrev = () => {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     }
@@ -85,7 +85,7 @@ const CreateAccountContent = () => {
     }
   };
 
-  const handleSubmit = async (e) => { 
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirm_password) {
       showAlert("Passwords do not match!", "bg-red-100 text-red-700");
@@ -113,8 +113,12 @@ const CreateAccountContent = () => {
     }
   };
 
-  const handleLogin = async (e) => { 
+  const handleLogin = async (e) => {
     e.preventDefault();
+    if (!captchaToken) {
+      showAlert("Please complete the captcha verification.", "bg-red-100 text-red-700");
+      return;
+    }
     setProcessing(true);
     try {
       const response = await login(loginData.username, loginData.password);
@@ -129,7 +133,7 @@ const CreateAccountContent = () => {
     }
   };
 
-  const toggleForm = () => setIsSignup((prev) => !prev); 
+  const toggleForm = () => setIsSignup((prev) => !prev);
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-sky-50 font-sans p-4 relative">
@@ -138,7 +142,7 @@ const CreateAccountContent = () => {
           <img src={logo} alt="Processing..." className="w-24 h-24 animate-spin" />
         </div>
       )}
-      {isSignup ? ( 
+      {isSignup ? (
         <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
           <div className="mb-4 text-center">
             <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
@@ -283,13 +287,22 @@ const CreateAccountContent = () => {
               <button
                 type="submit"
                 className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
+                onClick={() => captchaRef.current.execute()}
               >
                 Login
               </button>
             </div>
           </form>
+          <div>
+            <HCaptcha
+              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+              onVerify={handleCaptchaVerify}
+              ref={captchaRef}
+              size="invisible"
+            />
+          </div>
           <p className="text-center text-gray-600 mt-4">
-            Don't have an account?{" "}
+            Don&apost;t have an account?{" "}
             <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
               Create Account
             </button>
