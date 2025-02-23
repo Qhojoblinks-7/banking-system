@@ -1,10 +1,10 @@
 // CreateAccount.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../components/context/DataContext"; // Use global DataContext
 import logo from "../assets/Layer 2.png";
 import OTPVerification from "./OTPVerification";
-import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 // Multi-step form configuration for sign-up
 const stepsConfig = [
@@ -19,7 +19,7 @@ const stepsConfig = [
   { id: "step9", label: "Confirm Password", type: "password", name: "confirm_password", placeholder: "••••••••" },
 ];
 
-// Child component that uses the recaptcha hook
+// Child component that uses the hCaptcha hook
 const CreateAccountContent = () => {
   const { login, register } = useData(); // Use global register and login functions
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ const CreateAccountContent = () => {
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [captchaToken, setCaptchaToken] = useState(null);
 
-  const { executeRecaptcha } = useGoogleReCaptcha();
+  const captchaRef = useRef(null);
 
   const handleChange = (e) => { 
     const { name, value } = e.target;
@@ -81,20 +81,9 @@ const CreateAccountContent = () => {
     }
   };
 
-  const handleReCaptchaVerify = async () => {
-    if (!executeRecaptcha) {
-      console.log("Execute recaptcha not yet available");
-      return;
-    }
-    const token = await executeRecaptcha("register");
+  const handleCaptchaVerify = (token) => {
     setCaptchaToken(token);
   };
-
-  useEffect(() => {
-    if (executeRecaptcha) {
-      handleReCaptchaVerify();
-    }
-  }, [executeRecaptcha]);
 
   const handleSubmit = async (e) => { 
     e.preventDefault();
@@ -224,7 +213,7 @@ const CreateAccountContent = () => {
                   )}
                   <button
                     type="button"
-                    onClick={() => { handleNext(); handleReCaptchaVerify(); }}
+                    onClick={handleNext}
                     className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
                   >
                     Next
@@ -233,13 +222,19 @@ const CreateAccountContent = () => {
                     <button
                       type="submit"
                       className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
-                      onClick={handleReCaptchaVerify}
+                      onClick={() => captchaRef.current.execute()}
                     >
                       Create Account
                     </button>
                   )}
                 </div>
               </form>
+              <HCaptcha
+                sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+                onVerify={handleCaptchaVerify}
+                ref={captchaRef}
+                size="invisible"
+              />
               <p className="text-center text-gray-600 mt-4">
                 Already have an account?{" "}
                 <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
@@ -314,9 +309,7 @@ const CreateAccountContent = () => {
 
 const CreateAccount = () => {
   return (
-    <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_API_KEY}>
-      <CreateAccountContent />
-    </GoogleReCaptchaProvider>
+    <CreateAccountContent />
   );
 };
 
