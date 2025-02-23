@@ -4,29 +4,19 @@ import { useData } from "../context/DataContext"; // Use global DataContext
 import userProfilePic from "../../assets/avatars-3-d-avatar-210.png";
 
 const UserAccountOverview = () => {
-  const { user, fetchUserData } = useData(); // Get global user data and fetch function
+  const { user, fetchUserData } = useData();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!user); // start loading if no user yet
   const [error, setError] = useState(null);
 
-  // Fetch user data if not available
+  // Only fetch user data if user is available
   useEffect(() => {
-    if (!user) {
-      fetchUserData().catch((err) => setError(err.message));
+    if (user) {
+      fetchUserData()
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
     }
   }, [user, fetchUserData]);
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await fetchUserData();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const copyAccountNumber = async () => {
     try {
@@ -91,19 +81,8 @@ const UserAccountOverview = () => {
           </div>
         </div>
 
-        {/* Collapsible Details */}
-        <CollapsibleDetails
-          details={
-            <>
-              <p className="text-gray-600">
-                <span className="font-bold">Account Created:</span> {user?.created_at || "N/A"}
-              </p>
-              <p className="text-gray-600">
-                <span className="font-bold">Contact:</span> {user?.contact || "N/A"}
-              </p>
-            </>
-          }
-        />
+        {/* Additional User Info (if needed) */}
+        {/* Example: Collapsible Details */}
 
         {/* Action Buttons */}
         <div className="mt-6 flex flex-col md:flex-row items-center gap-4">
@@ -122,7 +101,7 @@ const UserAccountOverview = () => {
             Transaction History
           </button>
           <button
-            onClick={handleRefresh}
+            onClick={() => handleNavigation("/refresh-data")}
             className="bg-indigo-700 text-white py-3 px-8 rounded-lg hover:bg-indigo-500 shadow-md transition duration-300 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
             aria-label="Refresh Data"
           >
