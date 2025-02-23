@@ -6,15 +6,18 @@ import userProfilePic from "../../assets/avatars-3-d-avatar-210.png";
 const UserAccountOverview = () => {
   const { user, fetchUserData } = useData();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(!user); // start loading if no user yet
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Only fetch user data if user is available
+  // Only fetch user data if user exists
   useEffect(() => {
     if (user) {
       fetchUserData()
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
+    } else {
+      // If no user exists, stop loading (could prompt user to log in)
+      setLoading(false);
     }
   }, [user, fetchUserData]);
 
@@ -32,7 +35,7 @@ const UserAccountOverview = () => {
     navigate(path);
   };
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sky-500">
         <p className="text-white text-lg font-semibold">Loading user data...</p>
@@ -48,6 +51,14 @@ const UserAccountOverview = () => {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sky-500">
+        <p className="text-white text-lg font-semibold">No user data available. Please log in.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex flex-col items-center justify-center font-montserrat p-4">
       <div className="bg-white p-10 rounded-lg shadow-2xl text-center max-w-2xl transform transition-all hover:scale-105">
@@ -59,17 +70,17 @@ const UserAccountOverview = () => {
             className="w-24 h-24 rounded-full mb-4 border-4 border-green-500 shadow-2xl"
           />
           <h2 className="text-2xl font-extrabold text-green-700 mb-2">
-            {user?.full_name || "N/A"}
+            {user.full_name || "N/A"}
           </h2>
           <p className="text-lg text-gray-600 font-medium">
-            Account Type: {user?.account_type || "N/A"}
+            Account Type: {user.account_type || "N/A"}
           </p>
           <p className="text-lg text-gray-600 font-medium">
-            Balance: ${Number(user?.balance || 0).toFixed(2)}
+            Balance: ${Number(user.balance || 0).toFixed(2)}
           </p>
           <div className="mt-2 flex items-center space-x-2">
             <p className="text-gray-600 font-medium">
-              Account Number: {user?.account_number || "N/A"}
+              Account Number: {user.account_number || "N/A"}
             </p>
             <button
               onClick={copyAccountNumber}
@@ -80,9 +91,6 @@ const UserAccountOverview = () => {
             </button>
           </div>
         </div>
-
-        {/* Additional User Info (if needed) */}
-        {/* Example: Collapsible Details */}
 
         {/* Action Buttons */}
         <div className="mt-6 flex flex-col md:flex-row items-center gap-4">
