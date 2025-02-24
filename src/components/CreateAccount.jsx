@@ -1,10 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+// CreateAccount.jsx
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../components/context/DataContext"; // Use global DataContext
 import logo from "../assets/Layer 2.png";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
 
-// Multi-step form configuration for sign-up
 const stepsConfig = [
   { id: "step1", label: "Full Name", type: "text", name: "full_name", placeholder: "John Doe" },
   { id: "step2", label: "Email Address", type: "email", name: "email", placeholder: "john@example.com" },
@@ -18,7 +17,7 @@ const stepsConfig = [
 ];
 
 const CreateAccountContent = () => {
-  const { login, register } = useData(); // Use global register and login functions
+  const { login, register } = useData();
   const navigate = useNavigate();
 
   const [isSignup, setIsSignup] = useState(true);
@@ -36,16 +35,15 @@ const CreateAccountContent = () => {
     password: "",
     confirm_password: "",
   });
-  const [loginData, setLoginData] = useState({ username: "", password: "" });
-  const [captchaToken, setCaptchaToken] = useState(null);
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
 
-  const captchaRef = useRef(null);
-
+  // Handles changes for the registration form
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handles changes for the login form
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
     setLoginData((prev) => ({ ...prev, [name]: value }));
@@ -77,33 +75,22 @@ const CreateAccountContent = () => {
     }
   };
 
-  const handleCaptchaVerify = (token) => {
-    setCaptchaToken(token);
-    // Blur any focused iframe to avoid focus issues.
-    if (document.activeElement && document.activeElement.tagName === "IFRAME") {
-      document.activeElement.blur();
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirm_password) {
       showAlert("Passwords do not match!", "bg-red-100 text-red-700");
       return;
     }
-    if (!captchaToken) {
-      showAlert("Please complete the captcha verification.", "bg-red-100 text-red-700");
-      return;
-    }
     setProcessing(true);
     try {
       const { confirm_password, ...registrationData } = formData;
       // Register the user
-      const response = await register({ ...registrationData, captchaToken });
+      const newUser = await register({ ...registrationData });
+      // Automatically log in using the same email and password
+      const loggedInUser = await login(registrationData.email, registrationData.password);
       showAlert("Registration successful! Redirecting...", "bg-green-100 text-green-700");
-      // Redirect immediately to UserAccountOverview after successful registration.
       setTimeout(() => {
-        navigate("/user-account-overview", { state: { user: response } });
+        navigate("/user-account-overview", { state: { user: loggedInUser } });
       }, 2000);
     } catch (error) {
       console.error("Registration error:", error);
@@ -115,19 +102,15 @@ const CreateAccountContent = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!captchaToken) {
-      showAlert("Please complete the captcha verification.", "bg-red-100 text-red-700");
-      return;
-    }
     setProcessing(true);
     try {
-      const response = await login(loginData.username, loginData.password);
+      const loggedInUser = await login(loginData.email, loginData.password);
       showAlert("Login successful! Redirecting...", "bg-green-100 text-green-700");
       setTimeout(() => {
-        navigate("/user-account-overview", { state: { user: response.user } });
+        navigate("/user-account-overview", { state: { user: loggedInUser } });
       }, 2000);
     } catch (error) {
-      showAlert("Invalid username or password.", "bg-red-100 text-red-700");
+      showAlert("Invalid email or password.", "bg-red-100 text-red-700");
     } finally {
       setProcessing(false);
     }
@@ -219,21 +202,12 @@ const CreateAccountContent = () => {
                 <button
                   type="submit"
                   className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
-                  onClick={() => captchaRef.current.execute()}
                 >
                   Create Account
                 </button>
               )}
             </div>
           </form>
-          <div>
-            <HCaptcha
-              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
-              onVerify={handleCaptchaVerify}
-              ref={captchaRef}
-              size="invisible"
-            />
-          </div>
           <p className="text-center text-gray-600 mt-4">
             Already have an account?{" "}
             <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
@@ -255,15 +229,15 @@ const CreateAccountContent = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label htmlFor="loginUsername" className="block text-gray-700 font-medium mb-1">
-                Username:
+                Email:
               </label>
               <input
-                type="text"
+                type="email"
                 id="loginUsername"
-                name="username"
-                value={loginData.username}
+                name="email"
+                value={loginData.email}
                 onChange={handleLoginChange}
-                placeholder="johndoe"
+                placeholder="you@example.com"
                 required
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
               />
@@ -287,22 +261,13 @@ const CreateAccountContent = () => {
               <button
                 type="submit"
                 className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
-                onClick={() => captchaRef.current.execute()}
               >
                 Login
               </button>
             </div>
           </form>
-          <div>
-            <HCaptcha
-              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
-              onVerify={handleCaptchaVerify}
-              ref={captchaRef}
-              size="invisible"
-            />
-          </div>
           <p className="text-center text-gray-600 mt-4">
-            Don&apost;t have an account?{" "}
+            Don't have an account?{" "}
             <button onClick={toggleForm} className="text-green-700 font-semibold hover:underline">
               Create Account
             </button>

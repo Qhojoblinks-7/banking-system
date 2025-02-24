@@ -16,7 +16,6 @@ const UserAccountOverview = () => {
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
     } else {
-      // If no user exists, stop loading (could prompt user to log in)
       setLoading(false);
     }
   }, [user, fetchUserData]);
@@ -61,13 +60,13 @@ const UserAccountOverview = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex flex-col items-center justify-center font-montserrat p-4">
-      <div className="bg-white p-10 rounded-lg shadow-2xl text-center max-w-2xl transform transition-all hover:scale-105">
-        {/* Profile Section */}
+      <div className="bg-white p-10 rounded-lg shadow-2xl text-center max-w-md transform transition-all hover:scale-105">
+        <h1 className="text-3xl font-bold mb-4">User Profile</h1>
         <div className="flex flex-col items-center mb-6">
           <img
             src={userProfilePic}
             alt="User Profile"
-            className="w-24 h-24 rounded-full mb-4 border-4 border-green-500 shadow-2xl"
+            className="w-24 h-24 rounded-full mb-4 border-4 border-green-500 shadow-lg"
           />
           <h2 className="text-2xl font-extrabold text-green-700 mb-2">
             {user.full_name || "N/A"}
@@ -91,26 +90,24 @@ const UserAccountOverview = () => {
             </button>
           </div>
         </div>
-
-        {/* Action Buttons */}
         <div className="mt-6 flex flex-col md:flex-row items-center gap-4">
           <button
             onClick={() => handleNavigation("/user-dashboard")}
-            className="bg-green-700 text-white py-3 px-8 rounded-lg hover:bg-green-500 shadow-md transition duration-300 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="bg-green-700 text-white py-3 px-8 rounded-lg hover:bg-green-500 shadow-md transition text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
             aria-label="Go to Dashboard"
           >
             Go to Dashboard
           </button>
           <button
             onClick={() => handleNavigation("/transaction-history")}
-            className="bg-blue-700 text-white py-3 px-8 rounded-lg hover:bg-blue-500 shadow-md transition duration-300 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="bg-blue-700 text-white py-3 px-8 rounded-lg hover:bg-blue-500 shadow-md transition text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400"
             aria-label="View Transaction History"
           >
             Transaction History
           </button>
           <button
             onClick={() => handleNavigation("/refresh-data")}
-            className="bg-indigo-700 text-white py-3 px-8 rounded-lg hover:bg-indigo-500 shadow-md transition duration-300 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="bg-indigo-700 text-white py-3 px-8 rounded-lg hover:bg-indigo-500 shadow-md transition text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
             aria-label="Refresh Data"
           >
             Refresh Data

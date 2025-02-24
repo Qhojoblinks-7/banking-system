@@ -1,10 +1,11 @@
+// DataContext.jsx
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../supabaseClient'; // Import Supabase client
 import PropTypes from 'prop-types';
+import {jwtDecode} from 'jwt-decode';
 
 const DataContext = createContext();
 
-export const DataProvider = ({ children }) => {
+export const DataProvider = ({ children } = {}) => {
   // Global state
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || null);
@@ -16,110 +17,122 @@ export const DataProvider = ({ children }) => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch user data – only if user is available
-  const fetchUserData = useCallback(async () => {
-    if (!user) return;
+  // Helper function to get auth headers
+  const authHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  });
+
+  // Helper function to check token validity
+  const isTokenValid = (token) => {
+    if (!token) return false;
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      if (error) throw error;
-      setUser(data);
+      const decoded = jwtDecode(token);
+      return decoded.exp * 1000 > Date.now();
+    } catch (err) {
+      return false;
+    }
+  };
+
+  // Fetch user data from /api/user and merge account_number into user
+  const fetchUserData = useCallback(async () => {
+    if (!token || !isTokenValid(token)) return;
+    try {
+      const response = await fetch('/api/user', { headers: authHeaders() });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error fetching user data');
+      // Merge account_number (if returned) into user
+      const updatedUser = { ...json.user };
+      if (json.account_number) {
+        updatedUser.account_number = json.account_number;
+      }
+      setUser(updatedUser);
     } catch (error) {
       console.error('Fetch user data error:', error);
     }
-  }, [user]);
+  }, [token]);
 
+  // Fetch balance from /api/balance
   const fetchBalance = useCallback(async () => {
-    if (!user) return;
+    if (!token || !isTokenValid(token)) return;
     try {
-      const { data, error } = await supabase
-        .from('balances')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      if (error) throw error;
-      setBalance(data.balance);
+      const response = await fetch('/api/balance', { headers: authHeaders() });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error fetching balance');
+      setBalance(json.balance);
     } catch (error) {
       console.error('Fetch balance error:', error);
     }
-  }, [user]);
+  }, [token]);
 
+  // Fetch transactions from /api/transactions
   const fetchTransactions = useCallback(async () => {
-    if (!user) return;
+    if (!token || !isTokenValid(token)) return;
     try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      setTransactions(data);
+      const response = await fetch('/api/transactions', { headers: authHeaders() });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error fetching transactions');
+      setTransactions(json.transactions);
     } catch (error) {
       console.error('Fetch transactions error:', error);
     }
-  }, [user]);
+  }, [token]);
 
+  // Fetch loans from /api/loans
   const fetchLoans = useCallback(async () => {
-    if (!user) return;
+    if (!token || !isTokenValid(token)) return;
     try {
-      const { data, error } = await supabase
-        .from('loans')
-        .select('*')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      setLoans(data);
+      const response = await fetch('/api/loans', { headers: authHeaders() });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error fetching loans');
+      setLoans(json.loans);
     } catch (error) {
       console.error('Fetch loans error:', error);
     }
-  }, [user]);
+  }, [token]);
 
+  // Fetch expenditures from /api/expenditures
   const fetchExpenditures = useCallback(async () => {
-    if (!user) return;
+    if (!token || !isTokenValid(token)) return;
     try {
-      const { data, error } = await supabase
-        .from('expenditures')
-        .select('*')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      setExpenditures(data);
+      const response = await fetch('/api/expenditures', { headers: authHeaders() });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error fetching expenditures');
+      setExpenditures(json.expenditures);
     } catch (error) {
       console.error('Fetch expenditures error:', error);
     }
-  }, [user]);
+  }, [token]);
 
+  // Fetch investments from /api/investments
   const fetchInvestments = useCallback(async () => {
-    if (!user) return;
+    if (!token || !isTokenValid(token)) return;
     try {
-      const { data, error } = await supabase
-        .from('investments')
-        .select('*')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      setInvestments(data);
+      const response = await fetch('/api/investments', { headers: authHeaders() });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error fetching investments');
+      setInvestments(json.investments);
     } catch (error) {
       console.error('Fetch investments error:', error);
     }
-  }, [user]);
+  }, [token]);
 
+  // Fetch analytics from /api/analytics
   const fetchAnalytics = useCallback(async () => {
-    if (!user) return;
+    if (!token || !isTokenValid(token)) return;
     try {
-      const { data, error } = await supabase
-        .from('analytics')
-        .select('*')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      setAnalytics(data);
+      const response = await fetch('/api/analytics', { headers: authHeaders() });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error fetching analytics');
+      setAnalytics(json.analytics);
     } catch (error) {
       console.error('Fetch analytics error:', error);
     }
-  }, [user]);
+  }, [token]);
 
-  // When token changes, fetch all data (if user is already set)
+  // When token changes, fetch all data
   useEffect(() => {
-    if (token && user) {
+    if (token && isTokenValid(token)) {
       fetchUserData();
       fetchBalance();
       fetchTransactions();
@@ -127,19 +140,26 @@ export const DataProvider = ({ children }) => {
       fetchExpenditures();
       fetchInvestments();
       fetchAnalytics();
+    } else {
+      logout();
     }
-  }, [token, user, fetchUserData, fetchBalance, fetchTransactions, fetchLoans, fetchExpenditures, fetchInvestments, fetchAnalytics]);
+  }, [token, fetchUserData, fetchBalance, fetchTransactions, fetchLoans, fetchExpenditures, fetchInvestments, fetchAnalytics]);
 
-  // Login: authenticate using Supabase and store token (access token from session)
+  // Login: call /api/login
   const login = async (email, password) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      setUser(data.user);
-      setToken(data.session.access_token);
-      localStorage.setItem('token', data.session.access_token);
-      return data.user;
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error logging in');
+      setUser(json.user);
+      setToken(json.token);
+      localStorage.setItem('token', json.token);
+      return json.user;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -148,34 +168,25 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // Logout: clear state and remove token
+  // Logout: clear user and token
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
   };
 
-  // Register: create a new user using Supabase auth
+  // Register: call /api/register
   const register = async (registrationData) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email: registrationData.email,
-        password: registrationData.password,
-        options: {
-          data: {
-            full_name: registrationData.full_name,
-            phone_number: registrationData.phone_number,
-            date_of_birth: registrationData.date_of_birth,
-            residential_address: registrationData.residential_address,
-            account_type: registrationData.account_type,
-            username: registrationData.username,
-          },
-          captchaToken: registrationData.captchaToken,
-        },
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registrationData),
       });
-      if (error) throw error;
-      return data.user;
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Registration error');
+      return json.user;
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -184,17 +195,20 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // Add a new transaction (e.g., deposit or debit)
+  // Add a new transaction via /api/transactions
   const addTransaction = async (transactionData) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert(transactionData);
-      if (error) throw error;
-      setTransactions(prev => [data[0], ...prev]);
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(transactionData),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error adding transaction');
+      setTransactions((prev) => [json.transaction, ...prev]);
       fetchBalance();
-      return data;
+      return json;
     } catch (error) {
       console.error('Add transaction error:', error);
       throw error;
@@ -203,16 +217,19 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // Submit a new loan request
+  // Submit a new loan request via /api/loans
   const createLoan = async (loanData) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('loans')
-        .insert(loanData);
-      if (error) throw error;
-      setLoans(prev => [data[0], ...prev]);
-      return data;
+      const response = await fetch('/api/loans', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(loanData),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error creating loan');
+      setLoans((prev) => [json.loan, ...prev]);
+      return json;
     } catch (error) {
       console.error('Create loan error:', error);
       throw error;
@@ -221,16 +238,19 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // Initiate a funds transfer between accounts
+  // Initiate a funds transfer via /api/transfers
   const initiateTransfer = async (transferData) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('transfers')
-        .insert(transferData);
-      if (error) throw error;
+      const response = await fetch('/api/transfers', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(transferData),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error initiating transfer');
       fetchBalance();
-      return data;
+      return json;
     } catch (error) {
       console.error('Initiate transfer error:', error);
       throw error;
@@ -239,16 +259,19 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // Add a new expenditure record
+  // Add a new expenditure via /api/expenditures
   const addExpenditure = async (expenditureData) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('expenditures')
-        .insert(expenditureData);
-      if (error) throw error;
-      setExpenditures(prev => [data[0], ...prev]);
-      return data;
+      const response = await fetch('/api/expenditures', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(expenditureData),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Error adding expenditure');
+      setExpenditures((prev) => [json.expenditure, ...prev]);
+      return json;
     } catch (error) {
       console.error('Add expenditure error:', error);
       throw error;
@@ -297,13 +320,3 @@ DataProvider.propTypes = {
 export const useData = () => useContext(DataContext);
 
 export default DataProvider;
-  
-  // In the code above, we have defined a  DataContext  context and a  DataProvider  component that wraps the entire application. The  DataProvider  component provides the global state and methods to the rest of the application. 
-  // The  DataProvider  component contains the following state variables: 
-  // user : The current user token : The user token balance : The user's account balance transactions : The user's transaction history loans : The user's loan history expenditures : The user's expenditure history investments : The user's investment history analytics : The user's analytics data loading : A boolean to indicate when data is being fetched 
-  // The  DataProvider  component also contains the following methods: 
-  // login : Authenticates a user using Supabase auth logout : Logs out a user register : Registers a new user addTransaction : Adds a new transaction createLoan : Creates a new loan request initiateTransfer : Initiates a funds transfer between accounts addExpenditure : Adds a new expenditure record fetchUserData : Fetches user data fetchBalance : Fetches the user's account balance fetchTransactions : Fetches the user's transaction history fetchLoans : Fetches the user's loan history fetchExpenditures : Fetches the user's expenditure history fetchInvestments : Fetches the user's investment history fetchAnalytics : Fetches the user's analytics data 
-  // The  useData  hook is used to access the global state and methods from the  DataContext  context. 
-  // Step 4: Create the Login Component 
-  // Next, we will create a  Login  component that will allow users to log in to the application. 
-  // Create a new file named  Login.jsx  in the  src/components  directory and add the following code:

@@ -127,6 +127,14 @@ const App = () => {
               </ErrorBoundary>
             }
           />
+          <Route 
+            path="/analytics" 
+            element={
+              
+                <Analytics />
+              
+            }
+          />
         </Routes>
       </Suspense>
     </DataProvider>
