@@ -5,7 +5,7 @@ import express from 'express';
 import path from 'path';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { createClient } from '@supabase/supabase-js';
+import  {supabase}  from '../supabaseClient.js'; // Correct import path
 import { fileURLToPath } from 'url';
 
 // Setup __dirname for ESM
@@ -18,11 +18,11 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Load environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-// Create Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Check if environment variables are loaded
+if (!JWT_SECRET) {
+  throw new Error('Missing required environment variables');
+}
 
 // Dummy Exchange Rates Endpoint
 app.get('/api/exchange-rates', (req, res) => {
@@ -78,11 +78,15 @@ app.post('/api/register', async (req, res) => {
     } = req.body;
 
     // Check if user already exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: existingUserError } = await supabase
       .from('user_accounts')
       .select('email')
       .eq('email', email)
       .single();
+    if (existingUserError) {
+      console.error('Error checking existing user:', existingUserError);
+      return res.status(500).json({ error: existingUserError.message });
+    }
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
@@ -105,28 +109,36 @@ app.post('/api/register', async (req, res) => {
       }])
       .select()
       .single();
-    if (userError) return res.status(400).json({ error: userError.message });
+    if (userError) {
+      console.error('Error inserting new user:', userError);
+      return res.status(500).json({ error: userError.message });
+    }
 
     // Generate an account number in your desired format.
-    // For example: "BNS" + a 10-digit random number.
     const account_number = 'BNS' + Math.floor(1000000000 + Math.random() * 9000000000);
 
-    // Create bank account in bank_accounts table (make sure the table has an "account_number" column)
+    // Create bank account in bank_accounts table
     const { data: bankAccount, error: bankError } = await supabase
       .from('bank_accounts')
       .insert([{
         user_id: newUser.user_id,
         account_type,
         balance: 0,
-        account_number  // store generated account number
+        account_number
       }])
       .select()
       .single();
-    if (bankError) return res.status(400).json({ error: bankError.message });
+    if (bankError) {
+      console.error('Error creating bank account:', bankError);
+      return res.status(500).json({ error: bankError.message });
+    }
 
     // Send OTP to user's email via Supabase Magic Link
     const { error: otpError } = await supabase.auth.api.sendMagicLinkEmail(email);
-    if (otpError) return res.status(400).json({ error: otpError.message });
+    if (otpError) {
+      console.error('Error sending OTP:', otpError);
+      return res.status(500).json({ error: otpError.message });
+    }
 
     res.json({
       message: '✅ User registered successfully. Please verify your email.',
@@ -134,6 +146,7 @@ app.post('/api/register', async (req, res) => {
       bank_account: bankAccount
     });
   } catch (err) {
+    console.error('Registration error:', err);
     res.status(500).json({ error: err.message });
   }
 });

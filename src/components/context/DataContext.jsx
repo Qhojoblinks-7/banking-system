@@ -184,8 +184,21 @@ export const DataProvider = ({ children } = {}) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(registrationData),
       });
-      const json = await response.json();
-      if (!response.ok) throw new Error(json.error || 'Registration error');
+
+      // Check if the response is empty
+      if (response.status === 204) {
+        throw new Error('No content returned from server');
+      }
+
+      // Attempt to parse the JSON response
+      const json = await response.json().catch(() => {
+        throw new Error('Invalid JSON response');
+      });
+
+      if (!response.ok) {
+        throw new Error(json.error || 'Registration error');
+      }
+
       return json.user;
     } catch (error) {
       console.error('Registration error:', error);
