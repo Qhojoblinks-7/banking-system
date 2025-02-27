@@ -203,7 +203,6 @@ app.post("/api/resend-otp", async (req, res) => {
 // User login
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
- 
 
   try {
     const { data: user, error } = await supabase
@@ -221,11 +220,16 @@ app.post("/api/login", async (req, res) => {
       JWT_SECRET,
       { expiresIn: "1h" }
     );
-    res.status(200).json( {
-      success:true,
-      user:user,
-      token:token
-    });
+    if (token) {
+      res.cookie("token", token, { httpOnly: true, secure: false }).json({
+        success: true,
+        message: "Logged in successfully",
+        data: {
+          user_id: user.user_id,
+          email: user.email,
+        },
+      });
+    }
   } catch (err) {
     res.status(500).json({ error: err });
   }
