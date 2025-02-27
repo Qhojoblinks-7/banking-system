@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 config({ path: '../../.env' });
-
+import cors from 'cors';
 import express from 'express';
 import path from 'path';
 import bcrypt from 'bcrypt';
