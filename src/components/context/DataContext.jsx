@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import PropTypes from 'prop-types';
 import {jwtDecode} from 'jwt-decode';
 
+
 const DataContext = createContext();
 
 export const DataProvider = ({ children } = {}) => {
@@ -146,7 +147,7 @@ export const DataProvider = ({ children } = {}) => {
   }, [token, fetchUserData, fetchBalance, fetchTransactions, fetchLoans, fetchExpenditures, fetchInvestments, fetchAnalytics]);
 
   // Login: call /api/login
-  const login = async (email, password) => {
+    const login = async (email, password) => {
     try {
       setLoading(true);
       const response = await fetch('/api/login', {
@@ -167,7 +168,7 @@ export const DataProvider = ({ children } = {}) => {
       setLoading(false);
     }
   };
-
+ 
   // Logout: clear user and token
   const logout = () => {
     setUser(null);

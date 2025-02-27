@@ -35,6 +35,21 @@ app.get('/api/exchange-rates', (req, res) => {
   });
 });
 
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["PUT", "DELETE", "GET", "POST"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cache-Control",
+      "Expires",
+    ],
+    credentials: true,
+  })
+);
+
 // JWT Authentication Middleware
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -181,8 +196,12 @@ app.post('/api/resend-otp', async (req, res) => {
 
 // User login
 app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+  console.log(email);
+  console.log(password);
+  
   try {
-    const { email, password } = req.body;
+   
     const { data: user, error } = await supabase
       .from('user_accounts')
       .select('*')
@@ -194,7 +213,7 @@ app.post('/api/login', async (req, res) => {
     const token = jwt.sign({ user_id: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, user });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err });
   }
 });
 

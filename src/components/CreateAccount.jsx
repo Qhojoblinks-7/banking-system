@@ -3,6 +3,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../components/context/DataContext"; // Use global DataContext
 import logo from "../assets/Layer 2.png";
+import {loginUser} from "../store/loginSlice"  
+import { useDispatch } from "react-redux";
+ 
 
 const stepsConfig = [
   { id: "step1", label: "Full Name", type: "text", name: "full_name", placeholder: "John Doe" },
@@ -23,6 +26,7 @@ const CreateAccountContent = () => {
   const [isSignup, setIsSignup] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [processing, setProcessing] = useState(false);
+  const dispatch=useDispatch()
   const [alert, setAlert] = useState({ message: "", classes: "", visible: false });
   const [formData, setFormData] = useState({
     full_name: "",
@@ -100,6 +104,17 @@ const CreateAccountContent = () => {
     }
   };
 
+  const handleLogin=(e)=>{
+    e.preventDefault()
+    
+    
+    dispatch(loginUser({user:loginData})).then((res)=>{
+      console.log(res);
+      
+    })
+
+  }
+/* 
   const handleLogin = async (e) => {
     e.preventDefault();
     setProcessing(true);
@@ -114,7 +129,7 @@ const CreateAccountContent = () => {
     } finally {
       setProcessing(false);
     }
-  };
+  }; */
 
   const toggleForm = () => setIsSignup((prev) => !prev);
 
