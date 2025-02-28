@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { registerUser } from "../store/authSlice";
-import { loginUser } from "../store/authSlice";
+import { registerUser, loginUser } from "../store/authSlice";
 import logo from "../../assets/Layer 2.png";
+
 const stepsConfig = [
   {
     id: "step1",
@@ -126,22 +126,23 @@ const Register = () => {
     }
     setProcessing(true);
     try {
+      // Omit confirm_password from registration data
       const { confirm_password, ...registrationData } = formData;
-      // Dispatch registration action using Redux
+      // Dispatch registration thunk
       await dispatch(registerUser(registrationData)).unwrap();
 
-      // After successful registration, dispatch login action
-      const loginResult = await dispatch(
-        loginUser({ user: { email: registrationData.email, password: registrationData.password } })
+      // Dispatch login thunk with credentials directly (email & password)
+      await dispatch(
+        loginUser({ email: registrationData.email, password: registrationData.password })
       ).unwrap();
 
       showAlert("Registration successful! Redirecting...", "bg-green-100 text-green-700");
       setTimeout(() => {
-        navigate("/user-account-overview", { state: { user: loginResult } });
+        navigate("/user-account-overview");
       }, 2000);
     } catch (error) {
       console.error("Registration error:", error);
-      showAlert(`Error: ${error.message}`, "bg-red-100 text-red-700");
+      showAlert(`Error: ${error}`, "bg-red-100 text-red-700");
     } finally {
       setProcessing(false);
     }

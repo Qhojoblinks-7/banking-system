@@ -1,10 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
 import exchangeRatesReducer from "./exchangeRatesSlice";
 import testConnectionReducer from "./testConnectionSlice";
-import registerReducer from "./registerSlice";
+import authReducer from "./authSlice"; // Consolidated auth slice for both register and login
 import verifyOtpReducer from "./verifyOtpSlice";
 import resendOtpReducer from "./resendOtpSlice";
-import loginReducer from "./loginSlice";
 import userReducer from "./userSlice";
 import balanceReducer from "./balanceSlice";
 import cardsReducer from "./cardsSlice";
@@ -20,10 +19,9 @@ const store = configureStore({
   reducer: {
     exchangeRates: exchangeRatesReducer,
     testConnection: testConnectionReducer,
-    register: registerReducer,
+    auth: authReducer,
     verifyOtp: verifyOtpReducer,
     resendOtp: resendOtpReducer,
-    login: loginReducer,
     user: userReducer,
     balance: balanceReducer,
     cards: cardsReducer,

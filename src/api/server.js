@@ -200,10 +200,9 @@ app.post("/api/resend-otp", async (req, res) => {
   }
 });
 
-// User login
+// User login endpoint
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const { data: user, error } = await supabase
       .from("user_accounts")
@@ -212,18 +211,25 @@ app.post("/api/login", async (req, res) => {
       .single();
     if (error || !user)
       return res.status(400).json({ error: "Invalid email or password" });
+    
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match)
       return res.status(400).json({ error: "Invalid email or password" });
+    
     const token = jwt.sign(
       { user_id: user.user_id, email: user.email },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
+    
     if (token) {
-      res.cookie("token", token, { httpOnly: true, secure: false }).json({
+      // Set the token as a cookie...
+      res.cookie("token", token, { httpOnly: true, secure: false });
+      // Also return it in the JSON response
+      res.json({
         success: true,
         message: "Logged in successfully",
+        token, // <-- Added token here
         data: {
           user_id: user.user_id,
           email: user.email,
@@ -231,9 +237,10 @@ app.post("/api/login", async (req, res) => {
       });
     }
   } catch (err) {
-    res.status(500).json({ error: err });
+    res.status(500).json({ error: err.message });
   }
 });
+
 
 // ---------------------------------------------------------------------
 // Protected Endpoints (require valid JWT)
