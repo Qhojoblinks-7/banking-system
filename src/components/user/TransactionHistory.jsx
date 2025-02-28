@@ -1,31 +1,26 @@
 import { useEffect, useState } from "react";
-import { useData } from "../context/DataContext"; // Use global DataContext
-import userProfilePic from "../../assets/avatars-3-d-avatar-210.png"; // Ensure path is correct
+import { useDispatch, useSelector } from "react-redux";
+import { fetchTransactions } from "../../store/transactionsSlice"; // Adjust the path as needed
+import userProfilePic from "../../assets/avatars-3-d-avatar-210.png";
 
 const TransactionHistory = () => {
-  const { user, token, transactions, fetchTransactions } = useData();
+  const dispatch = useDispatch();
+
+  // Retrieve user, token, transactions, loading, and error state from Redux
+  const user = useSelector((state) => state.user.user);
+  const token = useSelector((state) => state.auth.token);
+  const { transactions, loading, error } = useSelector((state) => state.transactions);
+
   const [totalExpenditure, setTotalExpenditure] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Fetch transactions when user and token are available
   useEffect(() => {
     if (!user || !token) {
-      setError("User not authenticated.");
-      setLoading(false);
+      // Optionally, you can set an error state here if needed.
       return;
     }
-    const getTransactions = async () => {
-      try {
-        await fetchTransactions();
-      } catch (err) {
-        setError(err.response?.data?.error || "Failed to fetch transactions.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    getTransactions();
-  }, [user, token, fetchTransactions]);
+    dispatch(fetchTransactions());
+  }, [user, token, dispatch]);
 
   // Compute total expenditure whenever transactions change
   useEffect(() => {
@@ -60,10 +55,16 @@ const TransactionHistory = () => {
       <div className="bg-white p-6 md:p-8 rounded-lg shadow-xl text-center w-full max-w-lg">
         {/* User Info */}
         <div className="flex items-center space-x-4 mb-6">
-          <img src={userProfilePic} alt="User Profile" className="w-16 h-16 rounded-full border-2 border-gray-300" />
+          <img
+            src={userProfilePic}
+            alt="User Profile"
+            className="w-16 h-16 rounded-full border-2 border-gray-300"
+          />
           <div className="text-left">
             <h2 className="text-xl font-bold text-gray-800">{user?.name || "User"}</h2>
-            <p className="text-gray-600 text-sm">Account Number: {user?.accountNumber || "N/A"}</p>
+            <p className="text-gray-600 text-sm">
+              Account Number: {user?.accountNumber || "N/A"}
+            </p>
           </div>
         </div>
 
@@ -89,12 +90,17 @@ const TransactionHistory = () => {
               <tbody className="text-gray-700">
                 {transactions.length > 0 ? (
                   transactions.map((transaction, index) => (
-                    <tr key={index} className="border-b border-gray-300 last:border-none">
+                    <tr
+                      key={index}
+                      className="border-b border-gray-300 last:border-none"
+                    >
                       <td className="py-2 px-3">{transaction.date}</td>
                       <td className="py-2 px-3">{transaction.description}</td>
                       <td
                         className={`py-2 px-3 font-semibold ${
-                          transaction.amount < 0 ? "text-red-600" : "text-green-600"
+                          transaction.amount < 0
+                            ? "text-red-600"
+                            : "text-green-600"
                         }`}
                       >
                         {transaction.amount < 0 ? "-" : "+"}
