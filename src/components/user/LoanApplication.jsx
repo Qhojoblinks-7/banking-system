@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { useData } from "../context/DataContext"; // Use global DataContext
+import { useDispatch, useSelector } from "react-redux";
+import { createLoan } from "../../store/loansSlice"; // Adjust the path as needed
 
 const LoanApplication = () => {
-  const { user, token, createLoan } = useData(); // Retrieve user, token, and the createLoan function from the global context
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.user);
+  const token = useSelector((state) => state.auth.token);
+
   const [formData, setFormData] = useState({
     loan_amount: "",
     loan_term: "",
@@ -27,14 +31,14 @@ const LoanApplication = () => {
 
     try {
       const payload = {
-        user_id: user.user_id, // Include user ID from global context
+        user_id: user.user_id,
         loan_amount: Number(formData.loan_amount),
         loan_term: Number(formData.loan_term),
         purpose: formData.purpose,
         collateral: formData.collateral,
       };
 
-      await createLoan(payload);
+      await dispatch(createLoan(payload)).unwrap();
       setAlert({ type: "success", message: "✅ Loan application submitted successfully!" });
       setFormData({
         loan_amount: "",
