@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { useData } from "../context/DataContext"; // Use global DataContext
+import { useDispatch, useSelector } from "react-redux";
+import { initiateTransfer } from "../../store/transfersSlice"; // adjust the path as needed
+import { fetchBalance } from "../../store/balanceSlice"; // adjust the path as needed
 import { FaRegCreditCard, FaMobileAlt, FaUniversity } from "react-icons/fa";
 
 const Deposits = () => {
-  const {
-    user,
-    token,
-    initiateTransfer,
-    fetchBalance,
-    balance,
-    transactions,
-  } = useData(); // Get user data, token, and functions from the global DataContext
+  const dispatch = useDispatch();
+  // Retrieve token, user, balance, and transactions from Redux store
+  const token = useSelector((state) => state.auth.token);
+  const user = useSelector((state) => state.user.user);
+  const balance = useSelector((state) => state.balance.balance);
+  const transactions = useSelector((state) => state.transactions.transactions);
 
   const [selectedAccount, setSelectedAccount] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
@@ -21,7 +21,6 @@ const Deposits = () => {
 
   const accounts = user?.accounts || [];
 
-  // Handle deposit form submission using the global initiateTransfer function
   const handleDeposit = async (e) => {
     e.preventDefault();
     setSimMessage("");
@@ -37,10 +36,9 @@ const Deposits = () => {
         }`,
       };
 
-      await initiateTransfer(payload);
+      await dispatch(initiateTransfer(payload)).unwrap();
       setSimMessage("✅ Deposit transaction successful!");
-      // Refresh the balance from the global state after a deposit
-      await fetchBalance();
+      await dispatch(fetchBalance()).unwrap();
     } catch (err) {
       setSimMessage(`❌ Error: ${err.message}`);
     } finally {
