@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useData } from "../context/DataContext"; // Use the global DataContext
+import { useDispatch, useSelector } from "react-redux";
+import { fetchPaymentOptions } from "../../store/paymentSlice"; // Adjust the path as needed
 import logo from "../../assets/Layer 2.png"; // Import the bill payments logo
 
 // Payment Card Component
@@ -22,22 +23,21 @@ const PaymentCard = ({ title, provider, link }) => (
 
 // Main Bill Payments Component
 const BillPayments = () => {
-  const {
-    token,
-    paymentData,
-    paymentLoading,
-    paymentError,
-    fetchPaymentOptions,
-  } = useData(); // Get token and payment-related functions/data from context
+  const dispatch = useDispatch();
+  // Retrieve token from auth state and payment-related data from the payments slice
+  const token = useSelector((state) => state.auth.token);
+  const { paymentData, loading: paymentLoading, error: paymentError } = useSelector(
+    (state) => state.payments
+  );
   const [selectedTab, setSelectedTab] = useState("Utilities");
 
   useEffect(() => {
     if (token) {
-      fetchPaymentOptions();
+      dispatch(fetchPaymentOptions());
     }
-  }, [token, fetchPaymentOptions]);
+  }, [token, dispatch]);
 
-  const tabs = Object.keys(paymentData);
+  const tabs = Object.keys(paymentData || {});
 
   if (paymentLoading) {
     return <div className="text-center text-gray-500">Loading payment options...</div>;
@@ -78,8 +78,7 @@ const BillPayments = () => {
       {/* Tab Content */}
       <div>
         <h3 className="text-lg font-semibold mb-3 text-gray-800">{selectedTab}</h3>
-
-        {paymentData[selectedTab]?.length > 0 ? (
+        {paymentData && paymentData[selectedTab] && paymentData[selectedTab].length > 0 ? (
           paymentData[selectedTab].map((item, index) => <PaymentCard key={index} {...item} />)
         ) : (
           <p className="text-gray-500 text-center">No payment options available.</p>
