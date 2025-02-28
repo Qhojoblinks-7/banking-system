@@ -6,7 +6,10 @@ import LoanApplication from './components/user/LoanApplication';
 import ErrorBoundary from './components/ErrorBoundary'; // Import ErrorBoundary normally
 
 // Lazy loading components for better performance
+const Login = lazy(() => import('./components/Login'));
+const Register = lazy(() => import('./components/Register'));
 const CreateAccount = lazy(() => import('./components/CreateAccount'));
+
 const Home = lazy(() => import('./components/Home'));
 const UserAccountOverview = lazy(() => import('./components/userdashboard/UserAccountOverview'));
 const UserDashboard = lazy(() => import('./components/userdashboard/UserDashboard'));
@@ -23,11 +26,12 @@ const OTPVerification = lazy(() => import('./components/OTPVerification'));
 
 const App = () => {
   return (
-    <DataProvider>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/create-account" element={<CreateAccount />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/loanapplication" element={<LoanApplication />} />
           
@@ -137,7 +141,6 @@ const App = () => {
           />
         </Routes>
       </Suspense>
-    </DataProvider>
   );
 };
 

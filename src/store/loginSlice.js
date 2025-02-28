@@ -1,51 +1,35 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-export const loginUser = createAsyncThunk("/auth/login", async ({ user }) => {
-  const response = await axios.post("http://localhost:3000/api/login", user, {
-    withCredentials: true,
-  });
-  return response?.data;
-});
-
-export const registerUser = createAsyncThunk("/auth/register", async (user) => {
-  const response = await axios.post("http://localhost:3000/api/register", user);
-  return response?.data;
-});
-
-const initialState = {
-  user: null,
-  isLoading: false,
-  isAuth: false,
-};
+export const loginUser = createAsyncThunk(
+  "auth/login",
+  async (credentials) => {
+    const response = await axios.post("/api/login", credentials, {
+      withCredentials: true,
+    });
+    return response.data;
+  }
+);
 
 const loginSlice = createSlice({
-  name: "auth",
-  initialState,
-  reducers: {},
+  name: "login",
+  initialState: {
+    user: null,
+    status: "idle",
+    error: null,
+  },
   extraReducers: (builder) => {
     builder
       .addCase(loginUser.pending, (state) => {
-        state.isLoading = true;
+        state.status = "loading";
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-        (state.isLoading = false),
-          (state.user = action.payload),
-          (state.isAuth = true);
+        state.status = "succeeded";
+        state.user = action.payload.data;
       })
       .addCase(loginUser.rejected, (state, action) => {
-        (state.isLoading = false), (state.user = null), (state.isAuth = false);
-      })
-      .addCase(registerUser.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        (state.isLoading = false),
-          (state.user = action.payload),
-          (state.isAuth = true);
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        (state.isLoading = false), (state.user = null), (state.isAuth = false);
+        state.status = "failed";
+        state.error = action.error.message;
       });
   },
 });
