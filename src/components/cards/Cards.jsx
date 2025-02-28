@@ -1,41 +1,34 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import FlipCard from "./FlipCard";
 import CardForm from "./CardForm";
+import { fetchCards } from "../../store/cardsSlice"; // adjust the path as needed
 
-const initialCards = [
-  {
-    bank: "Visa",
-    cardNumber: "**** **** **** 1234",
-    holderName: "John Doe",
-    expiry: "12/27",
-    cvv: "123",
-  },
-  {
-    bank: "MasterCard",
-    cardNumber: "**** **** **** 5678",
-    holderName: "Alice Brown",
-    expiry: "06/25",
-    cvv: "456",
-  },
-];
+const Card = () => {
+  const dispatch = useDispatch();
+  const { cards, fetchStatus, error } = useSelector((state) => state.cards);
 
-const Card= () => {
-  const [cards, setCards] = useState(initialCards);
+  useEffect(() => {
+    dispatch(fetchCards());
+  }, [dispatch]);
 
-  const addCard = (newCard) => {
-    setCards([...cards, newCard]);
-  };
-
-  const deleteCard = (index) => {
-    setCards(cards.filter((_, i) => i !== index));
+  const handleDelete = (cardId) => {
+    // TODO: Implement delete functionality via a Redux thunk if needed.
+    console.log("Delete card with id:", cardId);
   };
 
   return (
     <div className="flex flex-col items-center py-10">
-      <CardForm addCard={addCard} />
+      <CardForm />
+      {fetchStatus === "loading" && <p>Loading cards...</p>}
+      {error && <p className="text-red-500">Error: {error}</p>}
       <div className="flex flex-wrap justify-center gap-8 mt-8">
-        {cards.map((card, index) => (
-          <FlipCard key={index} {...card} onDelete={() => deleteCard(index)} />
+        {cards && cards.map((card) => (
+          <FlipCard 
+            key={card.id} 
+            {...card} 
+            onDelete={() => handleDelete(card.id)} 
+          />
         ))}
       </div>
     </div>
