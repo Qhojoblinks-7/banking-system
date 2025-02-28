@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useData } from "../components/context/DataContext";
+import { useDispatch } from "react-redux";
+import { registerUser } from "../store/registerSlice";
+import { loginUser } from "../store/loginSlice";
 import logo from "../assets/Layer 2.png";
 
 const stepsConfig = [
@@ -64,8 +66,8 @@ const stepsConfig = [
 ];
 
 const Register = () => {
-  const { register, login } = useData();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [processing, setProcessing] = useState(false);
@@ -93,19 +95,13 @@ const Register = () => {
 
   const showAlert = (message, classes) => {
     setAlert({ message, classes, visible: true });
-    setTimeout(
-      () => setAlert({ message: "", classes: "", visible: false }),
-      5000
-    );
+    setTimeout(() => setAlert({ message: "", classes: "", visible: false }), 5000);
   };
 
   const validateStep = () => {
     const currentField = stepsConfig[currentStep];
     if (!formData[currentField.name]) {
-      showAlert(
-        `${currentField.label} is required.`,
-        "bg-red-100 text-red-700"
-      );
+      showAlert(`${currentField.label} is required.`, "bg-red-100 text-red-700");
       return false;
     }
     return true;
@@ -132,19 +128,17 @@ const Register = () => {
     setProcessing(true);
     try {
       const { confirm_password, ...registrationData } = formData;
-      // Register the user
-      const newUser = await register({ ...registrationData });
-      // Optionally, automatically log in the user
-      const loggedInUser = await login(
-        registrationData.email,
-        registrationData.password
-      );
-      showAlert(
-        "Registration successful! Redirecting...",
-        "bg-green-100 text-green-700"
-      );
+      // Dispatch registration action using Redux
+      await dispatch(registerUser(registrationData)).unwrap();
+
+      // After successful registration, dispatch login action
+      const loginResult = await dispatch(
+        loginUser({ user: { email: registrationData.email, password: registrationData.password } })
+      ).unwrap();
+
+      showAlert("Registration successful! Redirecting...", "bg-green-100 text-green-700");
       setTimeout(() => {
-        navigate("/user-account-overview", { state: { user: loggedInUser } });
+        navigate("/user-account-overview", { state: { user: loginResult } });
       }, 2000);
     } catch (error) {
       console.error("Registration error:", error);
@@ -158,20 +152,12 @@ const Register = () => {
     <div className="min-h-screen flex flex-col justify-center items-center bg-sky-50 font-sans p-4 relative">
       {processing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <img
-            src={logo}
-            alt="Processing..."
-            className="w-24 h-24 animate-spin"
-          />
+          <img src={logo} alt="Processing..." className="w-24 h-24 animate-spin" />
         </div>
       )}
       <div className="w-full max-w-md mx-auto gradient-border shadow-lg bg-white p-6">
         <div className="mb-4 text-center">
-          <img
-            src={logo}
-            alt="FutureLink Bank Logo"
-            className="mx-auto mb-2 h-12"
-          />
+          <img src={logo} alt="FutureLink Bank Logo" className="mx-auto mb-2 h-12" />
           <h1 className="text-2xl font-bold text-gray-800">Create Account</h1>
         </div>
         {alert.visible && (
@@ -179,8 +165,7 @@ const Register = () => {
             {alert.message}
           </div>
         )}
-
-        {/* progress bar */}
+        {/* Progress Bar */}
         <div className="mb-4">
           <div className="bg-gray-200 rounded-full overflow-hidden">
             <div
@@ -195,10 +180,7 @@ const Register = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {stepsConfig.map((step, index) => (
             <div key={step.id} className={index === currentStep ? "" : "hidden"}>
-              <label
-                htmlFor={step.id}
-                className="block text-gray-700 font-medium mb-1"
-              >
+              <label htmlFor={step.id} className="block text-gray-700 font-medium mb-1">
                 {step.label}:
               </label>
               {step.type !== "select" ? (

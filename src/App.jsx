@@ -6,9 +6,9 @@ import LoanApplication from './components/user/LoanApplication';
 import ErrorBoundary from './components/ErrorBoundary'; // Import ErrorBoundary normally
 
 // Lazy loading components for better performance
-const Login = lazy(() => import('./components/Login'));
-const Register = lazy(() => import('./components/Register'));
-const CreateAccount = lazy(() => import('./components/CreateAccount'));
+const Login = lazy(() => import('./components/auth/Login'));
+const Register = lazy(() => import('./components/auth/Register'));
+const CreateAccount = lazy(() => import('./components/auth/CreateAccount'));
 
 const Home = lazy(() => import('./components/Home'));
 const UserAccountOverview = lazy(() => import('./components/userdashboard/UserAccountOverview'));
