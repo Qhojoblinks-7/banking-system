@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../store/loginSlice";
+import { loginUser } from "../store/authSlice";
 import logo from "../../assets/Layer 2.png";
 
 const Login = () => {

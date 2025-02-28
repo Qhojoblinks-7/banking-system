@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { registerUser } from "../store/registerSlice";
-import { loginUser } from "../store/loginSlice";
+import { registerUser } from "../store/authSlice";
+import { loginUser } from "../store/authSlice";
 import logo from "../../assets/Layer 2.png";
 const stepsConfig = [
   {
