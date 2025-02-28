@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { withdraw } from "../../store/withdrawSlice"; // Adjust path as needed
-import { fetchUserData } from "../../store/userSlice"; // Assuming this thunk exists
-import { fetchTransactions } from "../../store/transactionsSlice"; // Assuming this thunk exists
+import { withdraw } from "../store/withdrawSlice"; // Adjust path as needed
+import { fetchUserData } from "../store/userSlice"; // Assuming this thunk exists
+import { fetchTransactions } from "../store/transactionsSlice"; // Assuming this thunk exists
 
 const Withdrawals = () => {
   const dispatch = useDispatch();

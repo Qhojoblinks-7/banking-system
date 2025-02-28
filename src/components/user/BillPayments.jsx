@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchPaymentOptions } from "../../store/paymentSlice"; // Adjust the path as needed
+import { fetchPaymentOptions } from "../store/paymentSlice"; // Adjust the path as needed
 import logo from "../../assets/Layer 2.png"; // Import the bill payments logo
 
 // Payment Card Component

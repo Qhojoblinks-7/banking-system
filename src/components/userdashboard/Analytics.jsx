@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAnalytics } from "../../store/analyticsSlice"; // Adjust path as needed
+import { fetchAnalytics } from "../store/analyticsSlice"; // Adjust path as needed
 
 const Analytics = () => {
   const dispatch = useDispatch();

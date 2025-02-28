@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addInvestment, fetchInvestmentOptions } from "../../store/investmentsSlice"; // Adjust the path as needed
+import { addInvestment, fetchInvestmentOptions } from "../store/investmentsSlice"; // Adjust the path as needed
 
 const Investments = () => {
   const dispatch = useDispatch();

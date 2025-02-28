@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import FlipCard from "./FlipCard";
 import CardForm from "./CardForm";
-import { fetchCards } from "../../store/cardsSlice"; // adjust the path as needed
+import { fetchCards } from "../store/cardsSlice"; // adjust the path as needed
 
 const Card = () => {
   const dispatch = useDispatch();

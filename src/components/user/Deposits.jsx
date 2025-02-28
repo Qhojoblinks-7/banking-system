@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { initiateTransfer } from "../../store/transfersSlice"; // adjust the path as needed
-import { fetchBalance } from "../../store/balanceSlice"; // adjust the path as needed
+import { initiateTransfer } from "../store/transfersSlice"; // adjust the path as needed
+import { fetchBalance } from "../store/balanceSlice"; // adjust the path as needed
 import { FaRegCreditCard, FaMobileAlt, FaUniversity } from "react-icons/fa";
 
 const Deposits = () => {

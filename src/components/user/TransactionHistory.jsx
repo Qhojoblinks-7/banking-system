@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchTransactions } from "../../store/transactionsSlice"; // Adjust the path as needed
+import { fetchTransactions } from "../store/transactionsSlice"; // Adjust the path as needed
 import userProfilePic from "../../assets/avatars-3-d-avatar-210.png";
 
 const TransactionHistory = () => {

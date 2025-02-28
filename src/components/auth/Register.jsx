@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { registerUser } from "../store/registerSlice";
 import { loginUser } from "../store/loginSlice";
-import logo from "../assets/Layer 2.png";
-
+import logo from "../../assets/Layer 2.png";
 const stepsConfig = [
   {
     id: "step1",

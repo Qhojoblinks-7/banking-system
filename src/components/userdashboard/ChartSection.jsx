@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Chart from "chart.js/auto";
-import { fetchExchangeRates } from "../../store/exchangeRatesSlice"; // Adjust path as needed
+import { fetchExchangeRates } from "../store/exchangeRatesSlice"; // Adjust path as needed
 
 const ChartSection = () => {
   const dispatch = useDispatch();

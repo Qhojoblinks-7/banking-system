@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchUser } from "../../store/userSlice"; // Adjust path as needed
+import { fetchUser } from "../store/userSlice"; // Adjust path as needed
 import userProfilePic from "../../assets/avatars-3-d-avatar-210.png"; // Ensure path is correct
 import Layout from "../Layout";
 import PropTypes from "prop-types";

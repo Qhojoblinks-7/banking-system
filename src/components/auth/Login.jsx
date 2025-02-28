@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../../store/loginSlice";
-import logo from "../assets/Layer 2.png";
+import { loginUser } from "../store/loginSlice";
+import logo from "../../assets/Layer 2.png";
 
 const Login = () => {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -29,7 +29,8 @@ const Login = () => {
     e.preventDefault();
     setProcessing(true);
     try {
-      const result = await dispatch(loginUser({ user: loginData })).unwrap();
+      // Pass loginData directly (not nested under "user")
+      const result = await dispatch(loginUser(loginData)).unwrap();
       showAlert("Login successful! Redirecting...", "bg-green-100 text-green-700");
       setTimeout(() => {
         navigate("/user-account-overview");

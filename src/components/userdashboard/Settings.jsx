@@ -4,8 +4,8 @@ import Layout from "../Layout";
 import PropTypes from "prop-types";
 
 // Import Redux actions from your slices (adjust paths as needed)
-import { updateProfile, changePassword, updateSecurityQuestions } from "../../store/userSlice";
-import { toggleTheme } from "../../store/uiSlice";
+import { updateProfile, changePassword, updateSecurityQuestions } from "../store/userSlice";
+import { toggleTheme } from "../store/uiSlice";
 
 const Settings = () => {
   const dispatch = useDispatch();

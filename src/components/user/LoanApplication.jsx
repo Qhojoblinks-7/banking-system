@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import  createLoan  from "../../store/loansSlice"; // Adjust the path as needed
+import  createLoan  from "../store/loansSlice"; // Adjust the path as needed
 
 const LoanApplication = () => {
   const dispatch = useDispatch();
