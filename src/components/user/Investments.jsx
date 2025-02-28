@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import { useData } from "../context/DataContext"; // Use global DataContext
+import { useDispatch, useSelector } from "react-redux";
+import { addInvestment, fetchInvestmentOptions } from "../../store/investmentsSlice"; // Adjust the path as needed
 
 const Investments = () => {
-  const {
-    user,
-    token,
-    investments,
-    addInvestment,
-    fetchInvestmentOptions,
-    investmentOptions,
-  } = useData(); // Retrieve global state and functions
+  const dispatch = useDispatch();
+
+  // Retrieve data from Redux store
+  const user = useSelector((state) => state.user.user);
+  const token = useSelector((state) => state.auth.token);
+  const investments = useSelector((state) => state.investments.investments);
+  const investmentOptions = useSelector((state) => state.investments.investmentOptions);
 
   const [amount, setAmount] = useState("");
   const [investmentType, setInvestmentType] = useState("Fixed Deposit");
@@ -19,9 +19,9 @@ const Investments = () => {
 
   useEffect(() => {
     if (user && token) {
-      fetchInvestmentOptions();
+      dispatch(fetchInvestmentOptions());
     }
-  }, [user, token, fetchInvestmentOptions]);
+  }, [user, token, dispatch]);
 
   const handleCreateInvestment = async (e) => {
     e.preventDefault();
@@ -38,7 +38,7 @@ const Investments = () => {
         duration: Number(duration),
       };
 
-      await addInvestment(payload);
+      await dispatch(addInvestment(payload)).unwrap();
       setMessage("✅ Investment Created Successfully!");
       setAmount("");
     } catch (error) {
@@ -53,7 +53,10 @@ const Investments = () => {
       <h1 className="text-3xl font-bold text-center text-gray-800">Investment Dashboard</h1>
 
       {/* Create Investment Form */}
-      <form className="mt-6 bg-white p-6 rounded-lg shadow-md" onSubmit={handleCreateInvestment}>
+      <form
+        className="mt-6 bg-white p-6 rounded-lg shadow-md"
+        onSubmit={handleCreateInvestment}
+      >
         <h2 className="text-lg font-semibold mb-4">Create Investment</h2>
         <label className="block text-gray-600">Amount</label>
         <input
