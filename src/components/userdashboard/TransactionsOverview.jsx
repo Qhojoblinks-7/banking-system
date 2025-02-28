@@ -1,7 +1,14 @@
-import { useData } from "../context/DataContext"; // Use global DataContext
+import { useSelector } from "react-redux";
 
 const TransactionsOverview = () => {
-  const { transactions, totalExpenditure } = useData(); // Get global transactions and totalExpenditure
+  // Retrieve transactions from the Redux store
+  const transactions = useSelector((state) => state.transactions.transactions);
+
+  // Compute total expenditure from transactions with negative amounts
+  const totalExpenditure = transactions.reduce(
+    (acc, tx) => (tx.amount < 0 ? acc + Math.abs(tx.amount) : acc),
+    0
+  );
 
   return (
     <section className="mt-8 space-y-6 bg-sky-100 w-full p-6 rounded-lg shadow-md">
@@ -9,15 +16,15 @@ const TransactionsOverview = () => {
       <div className="bg-white p-6 rounded-lg shadow-md text-center">
         <h3 className="text-lg font-bold text-gray-700">Total Expenditure</h3>
         <p className="text-3xl font-semibold text-red-600">
-          {totalExpenditure !== undefined ? `₵${totalExpenditure.toFixed(2)}` : '₵0.00'}
+          {transactions.length > 0 ? `₵${totalExpenditure.toFixed(2)}` : "₵0.00"}
         </p>
       </div>
 
       {/* Transactions Table */}
       <div className="overflow-x-auto">
         <table className="w-full bg-white shadow-md rounded-lg">
-          <thead>
-            <tr className="bg-sky-100 text-gray-800">
+          <thead className="bg-sky-100 text-gray-800">
+            <tr>
               <th className="py-3 px-4 text-left">Date</th>
               <th className="py-3 px-4 text-left">Description</th>
               <th className="py-3 px-4 text-right">Amount</th>
@@ -35,10 +42,12 @@ const TransactionsOverview = () => {
               transactions.map((tx) => (
                 <tr
                   key={tx.transaction_id}
-                  className="border-b last:border-none hover:bg-gray-100 transition"
+                  className="border-b border-gray-300 last:border-none hover:bg-gray-100 transition"
                 >
                   <td className="py-2 px-4">{tx.date || "N/A"}</td>
-                  <td className="py-2 px-4">{tx.description || "No Description"}</td>
+                  <td className="py-2 px-4">
+                    {tx.description || "No Description"}
+                  </td>
                   <td
                     className={`py-2 px-4 text-right font-semibold ${
                       tx.amount < 0 ? "text-red-600" : "text-green-600"
