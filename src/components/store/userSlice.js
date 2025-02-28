@@ -1,11 +1,20 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Async thunk to fetch user details
-export const fetchUser = createAsyncThunk("user/fetch", async () => {
-  const response = await axios.get("/api/user", { withCredentials: true });
-  return response.data;
-});
+// Async thunk to fetch user details, now including the token in the Authorization header.
+export const fetchUser = createAsyncThunk(
+  "user/fetch",
+  async (_, { getState }) => {
+    const { token } = getState().auth; // Retrieve token from the auth slice
+    const response = await axios.get("/api/user", {
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  }
+);
 
 // Async thunk to update user profile
 export const updateUserProfile = createAsyncThunk(
