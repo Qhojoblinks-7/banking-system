@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../store/authSlice";
+import { loginUser } from "../store/authSlice"; // Use the consolidated authSlice
 import logo from "../../assets/Layer 2.png";
 
 const Login = () => {
@@ -29,8 +29,8 @@ const Login = () => {
     e.preventDefault();
     setProcessing(true);
     try {
-      // Pass loginData directly (not nested under "user")
-      const result = await dispatch(loginUser(loginData)).unwrap();
+      // Dispatch loginUser with credentials directly (not nested under "user")
+      await dispatch(loginUser(loginData)).unwrap();
       showAlert("Login successful! Redirecting...", "bg-green-100 text-green-700");
       setTimeout(() => {
         navigate("/user-account-overview");
@@ -95,6 +95,7 @@ const Login = () => {
             <button
               type="submit"
               className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
+              aria-label="Login"
             >
               Login
             </button>
@@ -104,7 +105,7 @@ const Login = () => {
           Don't have an account?{" "}
           <button
             onClick={() => navigate("/register")}
-            className="text-green-700 font-semibold hover:underline"
+            className="text-green-700 font-semibold hover:underline focus:outline-none"
           >
             Create Account
           </button>
