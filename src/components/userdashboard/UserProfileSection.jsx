@@ -1,9 +1,12 @@
-import PropTypes from "prop-types"; // Import PropTypes for prop validation
+import PropTypes from "prop-types";
+import userProfilePic from "../../assets/avatars-3-d-avatar-210.png";
 
-import userProfilePic from "../../assets/avatars-3-d-avatar-210.png"; // Adjust path as needed
-
-const UserProfileSection = ({ userData, balanceVisible, toggleBalance }) => { 
-  // Validate props
+const UserProfileSection = ({ userData, balanceVisible, toggleBalance }) => {
+  // Format balance as currency (adjust locale and currency as needed)
+  const formattedBalance = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(userData.balance);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -17,10 +20,10 @@ const UserProfileSection = ({ userData, balanceVisible, toggleBalance }) => {
           <h2 className="text-xl font-bold text-gray-800">{userData.full_name}</h2>
           <p className="text-gray-600">Account Type: {userData.account_type}</p>
           <p className="text-gray-600">
-            Balance: {balanceVisible ? `$${userData.balance.toFixed(2)}` : "****"}
+            Balance: {balanceVisible ? formattedBalance : "****"}
             <button
               onClick={toggleBalance}
-              className="ml-2 text-blue-500 hover:underline"
+              className="ml-2 text-blue-500 hover:underline focus:outline-none"
             >
               {balanceVisible ? "Hide" : "Show"}
             </button>

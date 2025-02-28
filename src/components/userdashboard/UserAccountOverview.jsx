@@ -1,24 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useData } from "../context/DataContext"; // Use global DataContext
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUser } from "../../store/userSlice"; // Adjust path as needed
 import userProfilePic from "../../assets/avatars-3-d-avatar-210.png";
 
 const UserAccountOverview = () => {
-  const { user, fetchUserData } = useData();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  // Retrieve user, status, and error from Redux store
+  const { user, status, error } = useSelector((state) => state.user);
 
-  // Only fetch user data if user exists
+  // Fetch user data if not already loaded
   useEffect(() => {
-    if (user) {
-      fetchUserData()
-        .catch((err) => setError(err.message))
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+    if (status === "idle") {
+      dispatch(fetchUser());
     }
-  }, [user, fetchUserData]);
+  }, [dispatch, status]);
 
   const copyAccountNumber = async () => {
     try {
@@ -34,7 +32,7 @@ const UserAccountOverview = () => {
     navigate(path);
   };
 
-  if (loading) {
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sky-500">
         <p className="text-white text-lg font-semibold">Loading user data...</p>
@@ -42,7 +40,7 @@ const UserAccountOverview = () => {
     );
   }
 
-  if (error) {
+  if (status === "failed") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-red-500">
         <p className="text-white text-lg font-semibold">Error: {error}</p>
@@ -60,7 +58,7 @@ const UserAccountOverview = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex flex-col items-center justify-center font-montserrat p-4">
-      <div className="bg-white p-10 rounded-lg shadow-2xl text-center max-w-md transform transition-all hover:scale-105">
+      <div className="bg-white p-10 rounded-lg shadow-2xl text-center max-w-md mx-auto transform transition-all hover:scale-105">
         <h1 className="text-3xl font-bold mb-4">User Profile</h1>
         <div className="flex flex-col items-center mb-6">
           <img
