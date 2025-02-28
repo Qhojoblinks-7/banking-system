@@ -1,46 +1,35 @@
-import { useEffect, useState } from "react";
-import  useData  from "../context/DataContext"; // Use global DataContext
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAnalytics } from "../../store/analyticsSlice"; // Adjust path as needed
 
 const Analytics = () => {
-  const { token, analytics, fetchAnalytics } = useData();
-  const [localLoading, setLocalLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
+  const { analytics, status, error } = useSelector((state) => state.analytics);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!token) return;
-      setLocalLoading(true);
-      try {
-        await fetchAnalytics();
-      } catch (err) {
-        setError(err.response?.data?.message || "An unexpected error occurred");
-      } finally {
-        setLocalLoading(false);
-      }
-    };
+    if (token && status === "idle") {
+      dispatch(fetchAnalytics());
+    }
+  }, [token, dispatch, status]);
 
-    fetchData();
-  }, [token, fetchAnalytics]);
-
-  if (localLoading) {
+  if (status === "loading") {
     return (
       <div className="text-center text-gray-500">
         Loading analytics data, please wait...
-
       </div>
     );
   }
 
-  if (error) {
+  if (status === "failed") {
     return (
       <div className="text-red-500 text-center">
         Error: {error}. Please try again later.
-
       </div>
     );
   }
 
-  // Ensure analyticsData is always an array for rendering
+  // Ensure analytics data is always an array for rendering
   const analyticsData = Array.isArray(analytics)
     ? analytics
     : analytics
