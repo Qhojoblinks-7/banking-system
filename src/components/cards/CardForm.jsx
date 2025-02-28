@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { useData } from "../context/DataContext"; // adjust the path as needed
+import { useDispatch } from "react-redux";
+import { addCard } from "../../store/cardsSlice"; // Adjust the path as needed
+import logo from "../assets/Layer 2.png";
 
 const CardForm = () => {
-  const { addCard } = useData();
+  const dispatch = useDispatch();
   const [form, setForm] = useState({
     bank: "Visa",
     cardNumber: "",
@@ -26,9 +28,16 @@ const CardForm = () => {
       card_provider: form.bank,
       // Optionally include holderName if your API supports it
     };
+
     try {
-      await addCard(cardData);
-      setForm({ bank: "Visa", cardNumber: "", holderName: "", expiry: "", cvv: "" });
+      await dispatch(addCard(cardData)).unwrap();
+      setForm({
+        bank: "Visa",
+        cardNumber: "",
+        holderName: "",
+        expiry: "",
+        cvv: "",
+      });
     } catch (error) {
       console.error("Failed to add card:", error);
     }
