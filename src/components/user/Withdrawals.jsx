@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { useData } from "../context/DataContext"; // Use global DataContext
-// Note: Ensure that the DataContext provides the `withdrawFunds` function.
-const Withdrawals = () => {
-  const {
-    user,
-    transactions,
-    fetchUserData,
-    fetchTransactions,
-    withdrawFunds,
-  } = useData(); // Retrieve global state and functions from context
+import { useDispatch, useSelector } from "react-redux";
+import { withdraw } from "../../store/withdrawSlice"; // Adjust path as needed
+import { fetchUserData } from "../../store/userSlice"; // Assuming this thunk exists
+import { fetchTransactions } from "../../store/transactionsSlice"; // Assuming this thunk exists
 
+const Withdrawals = () => {
+  const dispatch = useDispatch();
+
+  // Retrieve user and transactions from Redux store.
+  const user = useSelector((state) => state.user.user);
+  const transactions = useSelector((state) => state.transactions.transactions);
+
+  // Local state for form fields, messages, and loading
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawMethod, setWithdrawMethod] = useState("ATM Withdrawal");
   const [withdrawDate, setWithdrawDate] = useState("");
@@ -17,7 +19,7 @@ const Withdrawals = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // Select first account by default
+  // Select first account by default (if available)
   const selectedAccount = user?.accounts?.[0] || null;
   const balance = selectedAccount ? selectedAccount.balance : 0;
 
@@ -26,9 +28,14 @@ const Withdrawals = () => {
     setError("");
     setMessage("");
 
-    if (!selectedAccount) return setError("No account found.");
-    if (withdrawAmount <= 0 || withdrawAmount > balance)
-      return setError("Invalid withdrawal amount.");
+    if (!selectedAccount) {
+      setError("No account found.");
+      return;
+    }
+    if (withdrawAmount <= 0 || withdrawAmount > balance) {
+      setError("Invalid withdrawal amount.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -39,12 +46,13 @@ const Withdrawals = () => {
         scheduled_date: withdrawDate || null,
       };
 
-      await withdrawFunds(payload);
+      await dispatch(withdraw(payload)).unwrap();
       setMessage("✅ Withdrawal successful!");
       setWithdrawAmount("");
       setWithdrawDate("");
-      await fetchUserData(); // Refresh balance and user info
-      await fetchTransactions(); // Refresh transactions
+      // Refresh user data and transactions
+      await dispatch(fetchUserData()).unwrap();
+      await dispatch(fetchTransactions()).unwrap();
     } catch (err) {
       setError("❌ Withdrawal failed. Please try again.");
     }
@@ -56,7 +64,9 @@ const Withdrawals = () => {
       {/* Header */}
       <header className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Withdraw Funds</h1>
-        <p className="text-sm text-gray-500">Home &gt; Dashboard &gt; Withdraw Funds</p>
+        <p className="text-sm text-gray-500">
+          Home &gt; Dashboard &gt; Withdraw Funds
+        </p>
       </header>
 
       {/* Withdrawal Form */}
@@ -73,7 +83,9 @@ const Withdrawals = () => {
             <p className="text-sm text-gray-600">
               {selectedAccount?.account_type} - {selectedAccount?.account_number}
             </p>
-            <p className="text-green-700 font-bold">Balance: GHC {balance.toFixed(2)}</p>
+            <p className="text-green-700 font-bold">
+              Balance: GHC {balance.toFixed(2)}
+            </p>
           </div>
 
           {/* Withdrawal Amount */}
@@ -99,7 +111,9 @@ const Withdrawals = () => {
           </select>
 
           {/* Scheduled Withdrawal (Optional) */}
-          <label className="block text-gray-600">Schedule Withdrawal (Optional)</label>
+          <label className="block text-gray-600">
+            Schedule Withdrawal (Optional)
+          </label>
           <input
             type="date"
             value={withdrawDate}
@@ -126,14 +140,16 @@ const Withdrawals = () => {
         ) : (
           <ul className="mt-2">
             {transactions
-              .filter((txn) => txn.type === "withdrawal")
+              .filter((txn) => txn.transaction_type === "withdrawal")
               .slice(0, 5)
               .map((txn) => (
-                <li key={txn.id} className="p-2 border-b last:border-none">
+                <li key={txn.transaction_id} className="p-2 border-b last:border-none">
                   <p className="text-gray-800">
                     GHC {txn.amount} - {txn.status}
                   </p>
-                  <p className="text-gray-500 text-sm">{txn.date}</p>
+                  <p className="text-gray-500 text-sm">
+                    {new Date(txn.transaction_timestramp).toLocaleDateString()}
+                  </p>
                 </li>
               ))}
           </ul>
@@ -143,8 +159,14 @@ const Withdrawals = () => {
       {/* Footer */}
       <footer className="mt-8 text-center text-gray-500 text-sm">
         <p>
-          Need help? <a href="#" className="text-blue-500">Contact Support</a> |{" "}
-          <a href="#" className="text-blue-500">FAQs</a>
+          Need help?{" "}
+          <a href="#" className="text-blue-500">
+            Contact Support
+          </a>{" "}
+          |{" "}
+          <a href="#" className="text-blue-500">
+            FAQs
+          </a>
         </p>
         <p>All transactions are secured with SSL encryption.</p>
       </footer>
