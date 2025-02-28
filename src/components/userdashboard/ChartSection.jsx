@@ -1,42 +1,27 @@
-import { useEffect, useRef, useState } from "react";
-import { useData } from "../context/DataContext"; // Use global DataContext
+import { useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Chart from "chart.js/auto";
-import axios from "axios";
+import { fetchExchangeRates } from "../../store/exchangeRatesSlice"; // Adjust path as needed
 
 const ChartSection = () => {
-  const { token } = useData(); // Get authentication token from DataContext
+  const dispatch = useDispatch();
   const lineChartRef = useRef(null);
-  const [exchangeRates, setExchangeRates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
+  // Retrieve token from Redux auth slice
+  const token = useSelector((state) => state.auth.token);
+  // Retrieve exchange rates data, loading status, and error from Redux exchangeRates slice
+  const { trends: exchangeRates, status, error } = useSelector(
+    (state) => state.exchangeRates
+  );
+
+  // Dispatch the fetchExchangeRates thunk when a token is available and status is idle
   useEffect(() => {
-    const fetchExchangeRates = async () => {
-      if (!token) return; // Ensure token is available
+    if (token && status === "idle") {
+      dispatch(fetchExchangeRates());
+    }
+  }, [token, dispatch, status]);
 
-      try {
-        setLoading(true);
-        // Fetch real-time exchange rate data
-        const response = await axios.get("/api/exchange-rates", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.data && response.data.trends) {
-          setExchangeRates(response.data.trends);
-        } else {
-          setExchangeRates([]);
-        }
-      } catch (err) {
-        console.error("Error fetching exchange rates:", err);
-        setError(err.response?.data?.message || "Failed to load exchange rates.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchExchangeRates();
-  }, [token]);
-
+  // Draw chart when exchangeRates change
   useEffect(() => {
     if (exchangeRates.length === 0 || !lineChartRef.current) return;
 
@@ -65,19 +50,30 @@ const ChartSection = () => {
     });
   }, [exchangeRates]);
 
-  if (loading) {
-    return <div className="text-center text-gray-500">Loading exchange rate trends...</div>;
+  if (status === "loading") {
+    return (
+      <div className="text-center text-gray-500">
+        Loading exchange rate trends...
+      </div>
+    );
   }
 
-  if (error) {
-    return <div className="text-red-500 text-center">Error: {error}</div>;
+  if (status === "failed") {
+    return (
+      <div className="text-red-500 text-center">Error: {error}</div>
+    );
   }
 
   return (
     <section className="mt-8 bg-sky-100 w-full p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-900">Dollar Rate Trend</h2>
+      <h2 className="text-2xl font-bold text-gray-900">
+        Dollar Rate Trend
+      </h2>
       <div className="relative" style={{ height: "300px" }}>
-        <canvas ref={lineChartRef} className="bg-white p-4 shadow-md rounded-lg"></canvas>
+        <canvas
+          ref={lineChartRef}
+          className="bg-white p-4 shadow-md rounded-lg"
+        ></canvas>
       </div>
     </section>
   );
