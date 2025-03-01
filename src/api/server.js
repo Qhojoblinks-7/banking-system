@@ -148,7 +148,6 @@ app.post("/api/register", async (req, res) => {
     res.json({
       message: "✅ User registered successfully. Please verify your email.",
       user: newUser,
-      // bank_account is created by the trigger; you might want to query it later.
     });
   } catch (err) {
     console.error("Registration error:", err);
