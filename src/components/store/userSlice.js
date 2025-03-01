@@ -1,29 +1,61 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Async thunk to fetch user details, now including the token in the Authorization header.
+// Async thunk to fetch user details (alias as fetchUserData)
 export const fetchUser = createAsyncThunk(
   "user/fetch",
-  async (_, { getState }) => {
-    const { token } = getState().auth; // Retrieve token from the auth slice
-    const response = await axios.get("/api/user", {
-      withCredentials: true,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get("/api/user", { withCredentials: true });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
   }
 );
 
 // Async thunk to update user profile
-export const updateUserProfile = createAsyncThunk(
+export const updateProfile = createAsyncThunk(
   "user/updateProfile",
-  async (profileData) => {
-    const response = await axios.post("/api/update-profile", profileData, {
-      withCredentials: true,
-    });
-    return response.data;
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/api/update-profile", profileData, {
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  }
+);
+
+// Async thunk to change password
+export const changePassword = createAsyncThunk(
+  "user/changePassword",
+  async (passwordData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/api/change-password", passwordData, {
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  }
+);
+
+// Async thunk to update security questions
+export const updateSecurityQuestions = createAsyncThunk(
+  "user/updateSecurityQuestions",
+  async (questionsData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/api/update-security-questions", questionsData, {
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
   }
 );
 
@@ -38,14 +70,12 @@ const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    // Synchronous reducer to update the user state
     updateUser(state, action) {
       state.user = { ...state.user, ...action.payload };
       if (action.payload.account_number) {
         state.accountNumber = action.payload.account_number;
       }
     },
-    // Synchronous reducer to clear user data (e.g., on logout)
     clearUser(state) {
       state.user = null;
       state.accountNumber = null;
@@ -55,7 +85,7 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch user cases
+      // fetchUserData cases
       .addCase(fetchUser.pending, (state) => {
         state.status = "loading";
       })
@@ -66,20 +96,44 @@ const userSlice = createSlice({
       })
       .addCase(fetchUser.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
-      // Update user profile cases
-      .addCase(updateUserProfile.pending, (state) => {
+      // updateProfile cases
+      .addCase(updateProfile.pending, (state) => {
         state.status = "loading";
       })
-      .addCase(updateUserProfile.fulfilled, (state, action) => {
+      .addCase(updateProfile.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.user = action.payload.user;
         state.accountNumber = action.payload.account_number;
       })
-      .addCase(updateUserProfile.rejected, (state, action) => {
+      .addCase(updateProfile.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
+      })
+      // changePassword cases
+      .addCase(changePassword.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.status = "succeeded";
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload || action.error.message;
+      })
+      // updateSecurityQuestions cases
+      .addCase(updateSecurityQuestions.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(updateSecurityQuestions.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.user = action.payload.user;
+        state.accountNumber = action.payload.account_number;
+      })
+      .addCase(updateSecurityQuestions.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload || action.error.message;
       });
   },
 });

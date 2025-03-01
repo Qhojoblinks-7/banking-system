@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { withdraw } from "../store/withdrawSlice"; // Adjust path as needed
-import { fetchUserData } from "../store/userSlice"; // Assuming this thunk exists
+import { withdraw } from "../store/withdrawSlice"; // Assuming this thunk exists
+import { fetchUser } from "../store/userSlice"; // Assuming this thunk exists
 import { fetchTransactions } from "../store/transactionsSlice"; // Assuming this thunk exists
 
 const Withdrawals = () => {
@@ -51,7 +51,7 @@ const Withdrawals = () => {
       setWithdrawAmount("");
       setWithdrawDate("");
       // Refresh user data and transactions
-      await dispatch(fetchUserData()).unwrap();
+      await dispatch(fetchUser()).unwrap();
       await dispatch(fetchTransactions()).unwrap();
     } catch (err) {
       setError("❌ Withdrawal failed. Please try again.");

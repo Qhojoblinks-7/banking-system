@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { addCard } from "../store/cardsSlice"; // Adjust the path as needed
-import logo from "../assets/Layer 2.png";
+// import logo from "../assets/Layer 2.png";
 
 const CardForm = () => {
   const dispatch = useDispatch();
