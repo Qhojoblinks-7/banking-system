@@ -102,10 +102,6 @@ app.post("/api/register", async (req, res) => {
       .select("email")
       .eq("email", email)
       .maybeSingle();
-    if (existingUserError) {
-      console.error("Error checking existing user:", existingUserError);
-      return res.status(500).json({ error: existingUserError.message });
-    }
     if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
     }
@@ -113,7 +109,7 @@ app.post("/api/register", async (req, res) => {
     // Hash the password
     const password_hash = await bcrypt.hash(password, 10);
 
-    // Insert new user into user_accounts table
+    // Insert new user into user_accounts table (the trigger will create the bank account)
     const { data: newUser, error: userError } = await supabase
       .from("user_accounts")
       .insert([
@@ -135,9 +131,6 @@ app.post("/api/register", async (req, res) => {
       return res.status(500).json({ error: userError.message });
     }
 
-    // NOTE: The bank account and analytics records are automatically created via trigger.
-    // Do not manually insert a bank account here to avoid duplicates.
-
     // Send OTP to user's email via Supabase Magic Link
     const { error: otpError } = await supabase.auth.api.sendMagicLinkEmail(email);
     if (otpError) {
@@ -148,6 +141,7 @@ app.post("/api/register", async (req, res) => {
     res.json({
       message: "✅ User registered successfully. Please verify your email.",
       user: newUser,
+      // bank_account is created by the trigger; it can be fetched later.
     });
   } catch (err) {
     console.error("Registration error:", err);

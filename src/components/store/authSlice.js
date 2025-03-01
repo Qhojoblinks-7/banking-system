@@ -48,7 +48,6 @@ const authSlice = createSlice({
       state.status = "idle";
       state.error = null;
     },
-    // Optionally, add a reducer to manually set a token
     setToken(state, action) {
       state.token = action.payload;
     },
@@ -62,8 +61,7 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.user = action.payload.user;
-        state.bankAccount = action.payload.bank_account;
-        // If your backend returns a token on registration, store it:
+        // Bank account not returned here; it will be fetched separately
         state.token = action.payload.token || null;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -76,7 +74,6 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = "succeeded";
-        // Assuming the backend returns user data under "data" and a token property
         state.user = action.payload.data;
         state.token = action.payload.token || null;
       })
