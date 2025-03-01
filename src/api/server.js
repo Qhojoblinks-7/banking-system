@@ -101,7 +101,7 @@ app.post("/api/register", async (req, res) => {
       .from("user_accounts")
       .select("email")
       .eq("email", email)
-      .single();
+      .maybeSingle();
     if (existingUserError) {
       console.error("Error checking existing user:", existingUserError);
       return res.status(500).json({ error: existingUserError.message });
