@@ -9,7 +9,6 @@ import { supabase } from "../supabaseClient.js"; // Correct import path
 import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
 
-// Setup __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,27 +16,18 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(cookieParser());
-app.use(authenticateToken);
-
 
 app.use(
   cors({
-    origin: "http://localhost:5170",
+    origin: "http://localhost:5173",
     methods: ["PUT", "DELETE", "GET", "POST"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cache-Control",
-      "Expires",
-    ],
+    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Expires"],
     credentials: true,
   })
 );
 
 // Load environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
-
-// Check if environment variables are loaded
 if (!JWT_SECRET) {
   throw new Error("Missing required environment variables");
 }
@@ -53,23 +43,30 @@ app.get("/api/exchange-rates", (req, res) => {
   });
 });
 
-// JWT Authentication Middleware (updated to check cookies)
+// JWT Authentication Middleware (checks both headers and cookies)
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   let token = authHeader && authHeader.split(" ")[1];
-  // If not found in the header, check cookies for "token"
   if (!token && req.cookies) {
     token = req.cookies.token;
   }
-  if (!token) return res.status(401).json({ error: "Missing token" });
+  if (!token) {
+    console.error("Missing token");
+    return res.status(401).json({ error: "Missing token" });
+  }
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: "Invalid token" });
+    if (err) {
+      console.error("Invalid token:", err);
+      return res.status(403).json({ error: "Invalid token" });
+    }
     req.user = user;
     next();
   });
 }
 
+// -----------------------
 // Public Endpoints
+// -----------------------
 
 // Test connection using the "user_accounts" table
 app.get("/api/test-connection", async (req, res) => {
@@ -85,7 +82,7 @@ app.get("/api/test-connection", async (req, res) => {
   }
 });
 
-// Register user and create bank account
+// Register user and (via trigger) create bank account & analytics record
 app.post("/api/register", async (req, res) => {
   try {
     const {
@@ -138,27 +135,8 @@ app.post("/api/register", async (req, res) => {
       return res.status(500).json({ error: userError.message });
     }
 
-    // Generate an account number in your desired format.
-    const account_number =
-      "BNS" + Math.floor(1000000000 + Math.random() * 9000000000);
-
-    // Create bank account in bank_accounts table
-    const { data: bankAccount, error: bankError } = await supabase
-      .from("bank_accounts")
-      .insert([
-        {
-          user_id: newUser.user_id,
-          account_type,
-          balance: 0,
-          account_number,
-        },
-      ])
-      .select()
-      .single();
-    if (bankError) {
-      console.error("Error creating bank account:", bankError);
-      return res.status(500).json({ error: bankError.message });
-    }
+    // NOTE: The bank account and analytics records are automatically created via trigger.
+    // Do not manually insert a bank account here to avoid duplicates.
 
     // Send OTP to user's email via Supabase Magic Link
     const { error: otpError } = await supabase.auth.api.sendMagicLinkEmail(email);
@@ -170,7 +148,7 @@ app.post("/api/register", async (req, res) => {
     res.json({
       message: "✅ User registered successfully. Please verify your email.",
       user: newUser,
-      bank_account: bankAccount,
+      // bank_account is created by the trigger; you might want to query it later.
     });
   } catch (err) {
     console.error("Registration error:", err);
@@ -209,7 +187,6 @@ app.post("/api/resend-otp", async (req, res) => {
 // User login endpoint
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const { data: user, error } = await supabase
       .from("user_accounts")
@@ -230,12 +207,11 @@ app.post("/api/login", async (req, res) => {
     );
     
     if (token) {
-      // Set the token as a cookie and return it in the JSON response.
-      res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "lax",path:"/" });
+      res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "lax", path: "/" });
       res.json({
         success: true,
         message: "Logged in successfully",
-        token, // token included in response
+        token,
         data: {
           user_id: user.user_id,
           email: user.email,
@@ -247,9 +223,9 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ---------------------------------------------------------------------
+// ----------------------------
 // Protected Endpoints (require valid JWT)
-// ---------------------------------------------------------------------
+// ----------------------------
 app.use("/api", authenticateToken);
 
 // Get user details (merges user_accounts with bank account's account_number)
@@ -282,7 +258,6 @@ app.get("/api/user", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // Get balance and account number
 app.get("/api/balance", async (req, res) => {
@@ -384,7 +359,6 @@ app.post("/api/transactions", async (req, res) => {
   try {
     const { transaction_type, amount, description } = req.body;
     const { user_id } = req.user;
-    // Get user's bank account ID
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("account_id")
@@ -444,7 +418,6 @@ app.post("/api/transfers", async (req, res) => {
   try {
     const { to_account, amount, description } = req.body;
     const { user_id } = req.user;
-    // Get sender's bank account ID
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("account_id")
@@ -468,7 +441,6 @@ app.post("/api/transfers", async (req, res) => {
 app.get("/api/expenditures", async (req, res) => {
   try {
     const { user_id } = req.user;
-    // First, get user's bank account ID
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("account_id")
@@ -493,7 +465,6 @@ app.post("/api/expenditures", async (req, res) => {
   try {
     const { category, amount, description } = req.body;
     const { user_id } = req.user;
-    // Get user's bank account ID
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("account_id")
@@ -540,7 +511,6 @@ app.post("/api/investments", async (req, res) => {
       status,
     } = req.body;
     const { user_id } = req.user;
-    // Get user's bank account ID
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("account_id")
@@ -594,7 +564,6 @@ app.post("/api/withdraw", async (req, res) => {
   try {
     const { account_number, amount, method, scheduled_date } = req.body;
     const { user_id } = req.user;
-    // Retrieve user's bank account by user_id and account_number
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("*")
@@ -611,7 +580,6 @@ app.post("/api/withdraw", async (req, res) => {
       return res.status(400).json({ error: "Invalid withdrawal amount" });
     }
     const newBalance = account.balance - amount;
-    // Update bank account balance
     const { error: updateError } = await supabase
       .from("bank_accounts")
       .update({ balance: newBalance })
@@ -621,7 +589,6 @@ app.post("/api/withdraw", async (req, res) => {
     const description =
       `Withdrawal via ${method}` +
       (scheduled_date ? ` scheduled on ${scheduled_date}` : "");
-    // Record the withdrawal as a transaction
     const { data: withdrawalData, error: txError } = await supabase
       .from("transactions")
       .insert([
