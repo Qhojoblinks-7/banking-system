@@ -2,11 +2,12 @@ import PropTypes from "prop-types";
 import userProfilePic from "../../assets/avatars-3-d-avatar-210.png";
 
 const UserProfileSection = ({ userData, balanceVisible, toggleBalance }) => {
-  // Format balance as currency (adjust locale and currency as needed)
+  // Use a default of 0 if userData.balance is undefined
+  const balance = typeof userData.balance === "number" ? userData.balance : 0;
   const formattedBalance = new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
-  }).format(userData.balance);
+    currency: "GHC",
+  }).format(balance);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -38,7 +39,7 @@ UserProfileSection.propTypes = {
   userData: PropTypes.shape({
     full_name: PropTypes.string.isRequired,
     account_type: PropTypes.string.isRequired,
-    balance: PropTypes.number.isRequired,
+    balance: PropTypes.number, // Not required now, default value will be used if undefined
   }).isRequired,
   balanceVisible: PropTypes.bool.isRequired,
   toggleBalance: PropTypes.func.isRequired,

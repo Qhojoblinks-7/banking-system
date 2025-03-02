@@ -48,6 +48,7 @@ const UserDashboard = () => {
         <DesktopSidebar />
         <main className="flex-1 p-6">
           <UserProfileSection
+            userData={user} // Pass the user data here!
             balanceVisible={balanceVisible}
             toggleBalance={toggleBalance}
           />
