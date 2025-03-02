@@ -332,20 +332,35 @@ app.post("/api/cards/verify", async (req, res) => {
   }
 });
 
-// Get transactions
+// Get transactions for the current user
 app.get("/api/transactions", async (req, res) => {
   try {
     const { user_id } = req.user;
-    const { data, error } = await supabase
+    
+    // First, fetch the bank account for the user
+    const { data: bankAccount, error: bankError } = await supabase
+      .from("bank_accounts")
+      .select("account_id")
+      .eq("user_id", user_id)
+      .limit(1)
+      .maybeSingle();
+      
+    if (bankError) return res.status(400).json({ error: bankError.message });
+    if (!bankAccount) return res.status(404).json({ error: "Bank account not found" });
+    
+    // Then, fetch transactions for that bank account
+    const { data: transactions, error } = await supabase
       .from("transactions")
       .select("*")
-      .eq("user_id", user_id);
+      .eq("account_id", bankAccount.account_id);
+      
     if (error) return res.status(400).json({ error: error.message });
-    res.json({ transactions: data });
+    res.json({ transactions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Create transaction (deposit or debit)
 app.post("/api/transactions", async (req, res) => {

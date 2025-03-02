@@ -19,8 +19,12 @@ const UserAccountOverview = () => {
   }, [dispatch, status]);
 
   const copyAccountNumber = async () => {
+    if (!user?.account_number) {
+      alert("Account number is not available");
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(user?.account_number || "");
+      await navigator.clipboard.writeText(user.account_number);
       alert("Account number copied to clipboard!");
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -51,7 +55,9 @@ const UserAccountOverview = () => {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sky-500">
-        <p className="text-white text-lg font-semibold">No user data available. Please log in.</p>
+        <p className="text-white text-lg font-semibold">
+          No user data available. Please log in.
+        </p>
       </div>
     );
   }

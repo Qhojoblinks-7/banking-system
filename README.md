@@ -235,3 +235,114 @@ RETURNING account_id;
 INSERT INTO public.user_accounts (full_name, email, phone_number, date_of_birth, residential_address, account_type, username, password_hash)
 VALUES ('John Doe', 'Accountant', '08012345678', '1990-01-01', '123, ABC Street, XYZ City', 'admin', 'admin', 'admin')
 RETURNING user_id;
+
+
+
+Next Steps
+Do you want to start with data collection or API development?
+Should I help you design a database structure for large-scale lesson storage?
+Do you want AI-based explanations (e.g., generating responses using GPT)?
+
+
+Step 1: Define the Data You Need
+Since your AI will teach subjects from Junior High to University, you need structured data on:
+
+✅ Subjects (Mathematics, Science, English, History, etc.)
+✅ Topics & Subtopics (e.g., Algebra → Linear Equations)
+✅ Difficulty Levels (Beginner, Intermediate, Advanced)
+✅ Step-by-Step Lessons (Definitions, Examples, Exercises)
+✅ Multimedia Support (Text, Images, Videos, Quizzes)
+
+Step 2: Find & Collect Educational Data
+There are three main ways to collect data:
+
+A. Using Public Educational APIs (Easiest Method)
+Many platforms provide free APIs for educational content.
+
+1️⃣ Wikipedia API – For general knowledge
+
+📌 Get structured lessons from Wikipedia
+📌 Use the MediaWiki API:
+Example: https://en.wikipedia.org/api/rest_v1/
+2️⃣ Khan Academy API – For video & text lessons
+
+📌 Extract structured learning content
+📌 API: https://api.khanacademy.org/
+3️⃣ Open Textbook API – For free textbooks
+
+📌 Get books for different subjects
+📌 API: https://openstax.org/api
+B. Web Scraping Educational Sites (Intermediate Method)
+If there is no API available, you can scrape websites with Python or Node.js.
+
+Example: Scraping Wikipedia for Lessons
+python
+Copy code
+import requests
+from bs4 import BeautifulSoup
+
+url = "https://en.wikipedia.org/wiki/Mathematics"
+response = requests.get(url)
+soup = BeautifulSoup(response.text, "html.parser")
+
+for paragraph in soup.find_all("p"):
+    print(paragraph.text)  # Extract text content
+🛑 Caution: Always check if a website allows scraping (robots.txt file).
+
+C. Crowdsourcing & Manual Entry (Most Accurate)
+If you want high-quality content, you can:
+1️⃣ Hire experts (Teachers, Professors) to create lessons
+2️⃣ Use open-source materials (MIT OpenCourseWare, OpenStax)
+3️⃣ Allow user submissions (Create a platform where users contribute lessons)
+
+Step 3: Store the Data in JSON
+After collecting data, structure it for your API.
+
+Example JSON File: lessons.json
+json
+Copy code
+{
+  "subject": "Physics",
+  "grade_level": "Senior High",
+  "topics": [
+    {
+      "topic_name": "Newton's Laws",
+      "difficulty": "Beginner",
+      "lessons": [
+        {
+          "step": 1,
+          "title": "First Law of Motion",
+          "content": "An object remains at rest or in uniform motion unless acted upon by an external force.",
+          "examples": [
+            "A book stays on a table until someone moves it."
+          ],
+          "next_step": 2
+        },
+        {
+          "step": 2,
+          "title": "Second Law of Motion",
+          "content": "Force = Mass × Acceleration (F = ma).",
+          "examples": [
+            "Pushing a heavy box requires more force."
+          ],
+          "next_step": 3
+        }
+      ]
+    }
+  ]
+}
+✅ Organized per subject, topic, and step
+✅ Includes examples to simplify concepts
+✅ Can be expanded with multimedia (images, quizzes)
+
+Step 4: Automate Data Collection
+If you plan to continuously collect and update lessons:
+
+Use a Python script to scrape and save lessons in JSON format
+Set up a cron job to update the dataset regularly
+Use a database (MongoDB, Firebase, PostgreSQL) to store large amounts of data
+Next Steps
+Which method do you want to start with? (API, Web Scraping, or Manual)
+Do you need help writing a script to collect and store data in JSON?
+Should I help you set up a database for large-scale storage?
+Let me know how you’d like to proceed! 🚀

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Async thunk to fetch user details (alias as fetchUserData)
+// Async thunk to fetch user details
 export const fetchUser = createAsyncThunk(
   "user/fetch",
   async (_, { rejectWithValue }) => {
@@ -49,9 +49,11 @@ export const updateSecurityQuestions = createAsyncThunk(
   "user/updateSecurityQuestions",
   async (questionsData, { rejectWithValue }) => {
     try {
-      const response = await axios.post("/api/update-security-questions", questionsData, {
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        "/api/update-security-questions",
+        questionsData,
+        { withCredentials: true }
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -61,7 +63,6 @@ export const updateSecurityQuestions = createAsyncThunk(
 
 const initialState = {
   user: null,
-  accountNumber: null,
   status: "idle",
   error: null,
 };
@@ -72,27 +73,26 @@ const userSlice = createSlice({
   reducers: {
     updateUser(state, action) {
       state.user = { ...state.user, ...action.payload };
-      if (action.payload.account_number) {
-        state.accountNumber = action.payload.account_number;
-      }
     },
     clearUser(state) {
       state.user = null;
-      state.accountNumber = null;
       state.status = "idle";
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // fetchUserData cases
+      // fetchUser cases
       .addCase(fetchUser.pending, (state) => {
         state.status = "loading";
       })
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.user = action.payload.user;
-        state.accountNumber = action.payload.account_number;
+        // Merge account_number into the user object
+        state.user = {
+          ...action.payload.user,
+          account_number: action.payload.account_number,
+        };
       })
       .addCase(fetchUser.rejected, (state, action) => {
         state.status = "failed";
@@ -104,8 +104,10 @@ const userSlice = createSlice({
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.user = action.payload.user;
-        state.accountNumber = action.payload.account_number;
+        state.user = {
+          ...action.payload.user,
+          account_number: action.payload.account_number,
+        };
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.status = "failed";
@@ -128,8 +130,10 @@ const userSlice = createSlice({
       })
       .addCase(updateSecurityQuestions.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.user = action.payload.user;
-        state.accountNumber = action.payload.account_number;
+        state.user = {
+          ...action.payload.user,
+          account_number: action.payload.account_number,
+        };
       })
       .addCase(updateSecurityQuestions.rejected, (state, action) => {
         state.status = "failed";
