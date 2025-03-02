@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
+import RefreshData from "./components/user/RefreshData";
 
 // Lazy loaded components for better performance
 const Login = lazy(() => import("./components/auth/Login"));
@@ -135,6 +136,14 @@ const App = () => {
             </ErrorBoundary>
           }
         />
+        <Route
+        path="/refresh-data"
+        element={
+          <ErrorBoundary>
+            <RefreshData />
+          </ErrorBoundary>
+        }
+      />
       </Routes>
     </Suspense>
   );
