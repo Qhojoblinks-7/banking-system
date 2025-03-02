@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchPaymentOptions } from "../store/paymentSlice"; // Adjust the path as needed
+import { fetchPaymentOptions } from "../store/paymentSlice"; // Adjust the path if needed
 import logo from "../../assets/Layer 2.png"; // Import the bill payments logo
 
 // Payment Card Component
@@ -24,11 +24,14 @@ const PaymentCard = ({ title, provider, link }) => (
 // Main Bill Payments Component
 const BillPayments = () => {
   const dispatch = useDispatch();
+  
   // Retrieve token from auth state and payment-related data from the payments slice
   const token = useSelector((state) => state.auth.token);
   const { paymentData, loading: paymentLoading, error: paymentError } = useSelector(
     (state) => state.payments
   );
+  
+  // Local state for the selected tab
   const [selectedTab, setSelectedTab] = useState("Utilities");
 
   useEffect(() => {
@@ -37,14 +40,23 @@ const BillPayments = () => {
     }
   }, [token, dispatch]);
 
+  // Get available tabs from paymentData, defaulting to empty object if null
   const tabs = Object.keys(paymentData || {});
 
   if (paymentLoading) {
-    return <div className="text-center text-gray-500">Loading payment options...</div>;
+    return (
+      <div className="text-center text-gray-500">
+        Loading payment options...
+      </div>
+    );
   }
 
   if (paymentError) {
-    return <div className="text-red-500 text-center">Error: {paymentError}</div>;
+    return (
+      <div className="text-red-500 text-center">
+        Error: {paymentError}
+      </div>
+    );
   }
 
   return (
@@ -77,11 +89,17 @@ const BillPayments = () => {
 
       {/* Tab Content */}
       <div>
-        <h3 className="text-lg font-semibold mb-3 text-gray-800">{selectedTab}</h3>
+        <h3 className="text-lg font-semibold mb-3 text-gray-800">
+          {selectedTab}
+        </h3>
         {paymentData && paymentData[selectedTab] && paymentData[selectedTab].length > 0 ? (
-          paymentData[selectedTab].map((item, index) => <PaymentCard key={index} {...item} />)
+          paymentData[selectedTab].map((item, index) => (
+            <PaymentCard key={index} {...item} />
+          ))
         ) : (
-          <p className="text-gray-500 text-center">No payment options available.</p>
+          <p className="text-gray-500 text-center">
+            No payment options available.
+          </p>
         )}
       </div>
     </div>
