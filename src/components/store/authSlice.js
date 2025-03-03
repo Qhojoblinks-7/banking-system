@@ -1,12 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../api"; // Your custom Axios instance configured with baseURL and withCredentials
+import api from "../api"; // Use the custom Axios instance
 
 // Async thunk for user registration
 export const registerUser = createAsyncThunk(
   "auth/register",
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await api.post("/api/register", userData);
+      // Use "/register" since baseURL already contains /api
+      const response = await api.post("/register", userData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -19,7 +20,8 @@ export const loginUser = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await api.post("/api/login", credentials);
+      // Use "/login" instead of "/api/login"
+      const response = await api.post("/login", credentials);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -51,28 +53,26 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    // Register user cases
     builder
-      // Registration cases
       .addCase(registerUser.pending, (state) => {
         state.status = "loading";
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.user = action.payload.user;
-        // Bank account creation is handled separately (via trigger)
         state.token = action.payload.token || null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload || action.error.message;
       })
-      // Login cases
+      // Login user cases
       .addCase(loginUser.pending, (state) => {
         state.status = "loading";
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = "succeeded";
-        // Assuming the backend returns user data under "data"
         state.user = action.payload.data;
         state.token = action.payload.token || null;
       })
