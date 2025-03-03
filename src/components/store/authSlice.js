@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../api"; // Use the custom Axios instance
+import api from "../api"; // This file now handles the base URL
 
 // Async thunk for user registration
 export const registerUser = createAsyncThunk(
   "auth/register",
   async (userData, { rejectWithValue }) => {
     try {
-      // Use "/register" since baseURL already contains /api
+      // Use "/register" because baseURL already includes "/api"
       const response = await api.post("/register", userData);
       return response.data;
     } catch (error) {
@@ -20,7 +20,7 @@ export const loginUser = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      // Use "/login" instead of "/api/login"
+      // Use "/login" because baseURL already includes "/api"
       const response = await api.post("/login", credentials);
       return response.data;
     } catch (error) {
@@ -28,6 +28,7 @@ export const loginUser = createAsyncThunk(
     }
   }
 );
+
 
 const initialState = {
   user: null,
