@@ -17,25 +17,16 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(cookieParser());
 
-const allowedOrigins = ["http://localhost:5173"]; // Always allow local development
+// CORS configuration
+const allowedOrigins = ["http://localhost:5173"]; // Local development
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, etc.)
+      // Allow requests with no origin (e.g. mobile apps, curl)
       if (!origin) return callback(null, true);
-
-      // Allow local development origin
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      
-      // Allow any origin that includes "vercel.app" (production deployments)
-      if (origin.includes("vercel.app")) {
-        return callback(null, true);
-      }
-
-      // Otherwise, block the request
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (origin.includes("vercel.app")) return callback(null, true);
       return callback(new Error("Not allowed by CORS"), false);
     },
     methods: ["PUT", "DELETE", "GET", "POST"],
@@ -43,7 +34,6 @@ app.use(
     credentials: true,
   })
 );
-
 
 // Load environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -62,7 +52,7 @@ app.get("/api/exchange-rates", (req, res) => {
   });
 });
 
-// JWT Authentication Middleware (checks both headers and cookies)
+// JWT Authentication Middleware (checks headers and cookies)
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   let token = authHeader && authHeader.split(" ")[1];
@@ -116,7 +106,7 @@ app.post("/api/register", async (req, res) => {
     } = req.body;
 
     // Check if user already exists
-    const { data: existingUser, error: existingUserError } = await supabase
+    const { data: existingUser } = await supabase
       .from("user_accounts")
       .select("email")
       .eq("email", email)
@@ -380,12 +370,12 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
-
 // Create transaction (deposit or debit)
 app.post("/api/transactions", async (req, res) => {
   try {
     const { transaction_type, amount, description } = req.body;
     const { user_id } = req.user;
+    // Get user's bank account ID
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("account_id")
@@ -445,6 +435,7 @@ app.post("/api/transfers", async (req, res) => {
   try {
     const { to_account, amount, description } = req.body;
     const { user_id } = req.user;
+    // Get sender's bank account ID
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("account_id")
@@ -468,6 +459,7 @@ app.post("/api/transfers", async (req, res) => {
 app.get("/api/expenditures", async (req, res) => {
   try {
     const { user_id } = req.user;
+    // First, get user's bank account ID
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("account_id")
@@ -591,6 +583,7 @@ app.post("/api/withdraw", async (req, res) => {
   try {
     const { account_number, amount, method, scheduled_date } = req.body;
     const { user_id } = req.user;
+    // Retrieve user's bank account by user_id and account_number
     const { data: accountData, error: accountError } = await supabase
       .from("bank_accounts")
       .select("*")
