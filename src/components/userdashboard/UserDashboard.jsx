@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import Header from "../Header";
 import MobileSidebar from "./MobileSidebar";
@@ -10,11 +10,13 @@ import TransactionsOverview from "./TransactionsOverview";
 import QuickActions from "./QuickActions";
 import ChartSection from "./ChartSection";
 import Footer from "../Footer";
+import { fetchUser } from "../store/userSlice";
 
 const UserDashboard = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Retrieve user from Redux store
+  // Retrieve user from Redux store (user data now includes account_number and balance)
   const user = useSelector((state) => state.user.user);
 
   // UI toggles for mobile sidebar and balance visibility
@@ -27,7 +29,14 @@ const UserDashboard = () => {
   const toggleMobileSidebar = () => setMobileSidebarOpen((prev) => !prev);
   const toggleBalance = () => setBalanceVisible((prev) => !prev);
 
-  // Display a loading message if user data is not available
+  // Fetch user data if not already loaded
+  useEffect(() => {
+    if (!user) {
+      dispatch(fetchUser());
+    }
+  }, [dispatch, user]);
+
+  // If user data is not loaded, display a loading message
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sky-50">
@@ -41,16 +50,15 @@ const UserDashboard = () => {
   return (
     <div className="flex flex-col min-h-screen bg-sky-50 font-sans pt-36 pb-16">
       <Header toggleMobileSidebar={toggleMobileSidebar} />
-      {mobileSidebarOpen && (
-        <MobileSidebar toggleMobileSidebar={toggleMobileSidebar} />
-      )}
+      {mobileSidebarOpen && <MobileSidebar toggleMobileSidebar={toggleMobileSidebar} />}
       <div className="flex flex-col md:flex-row flex-grow">
         <DesktopSidebar />
         <main className="flex-1 p-6">
-          <UserProfileSection
-            userData={user} // Pass the user data here!
-            balanceVisible={balanceVisible}
-            toggleBalance={toggleBalance}
+          {/* Pass user data as userData prop */}
+          <UserProfileSection 
+            userData={user} 
+            balanceVisible={balanceVisible} 
+            toggleBalance={toggleBalance} 
           />
           <TransactionsOverview />
           <QuickActions />

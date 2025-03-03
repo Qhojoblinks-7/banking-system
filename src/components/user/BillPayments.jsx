@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchPaymentOptions } from "../store/paymentSlice"; // Adjust the path if needed
 import logo from "../../assets/Layer 2.png"; // Import the bill payments logo
 
 // Payment Card Component
@@ -23,27 +21,62 @@ const PaymentCard = ({ title, provider, link }) => (
 
 // Main Bill Payments Component
 const BillPayments = () => {
-  const dispatch = useDispatch();
-  
-  // Retrieve token from auth state and payment-related data from the payments slice
-  const token = useSelector((state) => state.auth.token);
-  const { paymentData, loading: paymentLoading, error: paymentError } = useSelector(
-    (state) => state.payments
-  );
-  
-  // Local state for the selected tab
+  const [paymentData, setPaymentData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedTab, setSelectedTab] = useState("Utilities");
 
+  // Simulate fetching payment options from an API
   useEffect(() => {
-    if (token) {
-      dispatch(fetchPaymentOptions());
-    }
-  }, [token, dispatch]);
+    // Simulate an API call with a timeout
+    const fetchData = async () => {
+      try {
+        // Simulated data (replace with real API call if needed)
+        const data = {
+          Utilities: [
+            {
+              title: "Electricity Bill",
+              provider: "Electricity Co.",
+              link: "https://example.com/pay/electricity",
+            },
+            {
+              title: "Water Bill",
+              provider: "Water Inc.",
+              link: "https://example.com/pay/water",
+            },
+          ],
+          Internet: [
+            {
+              title: "Internet Bill",
+              provider: "ISP X",
+              link: "https://example.com/pay/internet",
+            },
+          ],
+          Mobile: [
+            {
+              title: "Mobile Bill",
+              provider: "Telecom Y",
+              link: "https://example.com/pay/mobile",
+            },
+          ],
+        };
+        // Simulate network delay
+        setTimeout(() => {
+          setPaymentData(data);
+          setLoading(false);
+        }, 1000);
+      } catch (err) {
+        setError("Failed to load payment options.");
+        setLoading(false);
+      }
+    };
 
-  // Get available tabs from paymentData, defaulting to empty object if null
-  const tabs = Object.keys(paymentData || {});
+    fetchData();
+  }, []);
 
-  if (paymentLoading) {
+  const tabs = Object.keys(paymentData);
+
+  if (loading) {
     return (
       <div className="text-center text-gray-500">
         Loading payment options...
@@ -51,10 +84,10 @@ const BillPayments = () => {
     );
   }
 
-  if (paymentError) {
+  if (error) {
     return (
       <div className="text-red-500 text-center">
-        Error: {paymentError}
+        Error: {error}
       </div>
     );
   }
@@ -72,19 +105,23 @@ const BillPayments = () => {
 
       {/* Tabs Navigation */}
       <div className="flex justify-between bg-gray-200 p-2 rounded-lg mb-4">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setSelectedTab(tab)}
-            className={`flex-1 py-2 rounded-md transition ${
-              selectedTab === tab
-                ? "bg-green-600 text-white font-semibold"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {tabs.length > 0 ? (
+          tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setSelectedTab(tab)}
+              className={`flex-1 py-2 rounded-md transition ${
+                selectedTab === tab
+                  ? "bg-green-600 text-white font-semibold"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              {tab}
+            </button>
+          ))
+        ) : (
+          <p className="text-gray-600 text-center">No payment categories found.</p>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -92,7 +129,7 @@ const BillPayments = () => {
         <h3 className="text-lg font-semibold mb-3 text-gray-800">
           {selectedTab}
         </h3>
-        {paymentData && paymentData[selectedTab] && paymentData[selectedTab].length > 0 ? (
+        {paymentData[selectedTab] && paymentData[selectedTab].length > 0 ? (
           paymentData[selectedTab].map((item, index) => (
             <PaymentCard key={index} {...item} />
           ))
