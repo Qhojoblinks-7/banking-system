@@ -17,14 +17,33 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(cookieParser());
 
+const allowedOrigins = ["http://localhost:5173"]; // Always allow local development
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+
+      // Allow local development origin
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Allow any origin that includes "vercel.app" (production deployments)
+      if (origin.includes("vercel.app")) {
+        return callback(null, true);
+      }
+
+      // Otherwise, block the request
+      return callback(new Error("Not allowed by CORS"), false);
+    },
     methods: ["PUT", "DELETE", "GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Expires"],
     credentials: true,
   })
 );
+
 
 // Load environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
