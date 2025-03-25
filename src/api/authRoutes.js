@@ -1,139 +1,105 @@
-// authRoutes.js
 import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { supabaseAdmin as supabase } from "../supabaseServiceRole.js";
+
 const router = express.Router();
 
-// User registration endpoint
+// User registration
 router.post("/register", async (req, res) => {
   try {
     const { full_name, email, phone_number, date_of_birth, residential_address, account_type, username, password, confirm_password } = req.body;
 
-    console.log("Received registration request body:", req.body); // Log the entire request body
+    if (password !== confirm_password) {
+      return res.status(400).json({ error: "Passwords do not match." });
+    }
 
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedUsername = username.toLowerCase().trim();
 
-    console.log("Normalized email:", normalizedEmail);
-    console.log("Normalized username:", normalizedUsername);
-
-    // Check if username already exists
-    const { data: existingUsername } = await supabase
-      .from("user_accounts")
-      .select("user_id")
-      .eq("username", normalizedUsername)
-      .maybeSingle();
-
-    if (existingUsername) {
-      return res.status(400).json({ error: "Username already exists." });
-    }
-
-    // Check if email already exists
+    // Check if email or username already exists
     const { data: existingUser } = await supabase
       .from("user_accounts")
       .select("user_id")
-      .eq("email", normalizedEmail)
+      .or(`email.eq.${normalizedEmail},username.eq.${normalizedUsername}`)
       .maybeSingle();
 
     if (existingUser) {
-      return res.status(400).json({ error: "Email address is already registered." }); // Added error for existing email
-    } else {
-      // Password confirmation check (optional but recommended)
-      if (password !== confirm_password) {
-        return res.status(400).json({ error: "Passwords do not match." });
-      }
-
-      console.log("Attempting Supabase signup with email:", normalizedEmail);
-      console.log("Attempting Supabase signup with username:", normalizedUsername);
-      console.log("Supabase signup options data:", {
-        full_name,
-        phone_number,
-        date_of_birth,
-        residential_address,
-        account_type,
-        username: normalizedUsername,
-      });
-
-      // Use Supabase auth.signUp for user creation
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password: password,
-        options: {
-          data: {
-            full_name,
-            phone_number,
-            date_of_birth,
-            residential_address,
-            account_type,
-            username: normalizedUsername,
-          },
-        },
-      });
-
-      if (authError) {
-        console.error("Supabase signup error:", authError); // Log the error message
-        console.error("Supabase signup error details:", authError); // Log the entire error object
-        return res.status(400).json({ error: authError.message });
-      }
-
-      res.json({ message: "User registered successfully. Please verify your email.", user: authData?.user });
+      return res.status(400).json({ error: "Email or username already exists." });
     }
-  } catch (err) {
-    console.error("Registration error:", err);
-    res.status(500).json({ error: "Internal server error." });
-  }
-});
 
-// Resend OTP endpoint (remains the same)
-router.post("/resend-otp", async (req, res) => {
-  try {
-    const { email } = req.body;
-    const { error } = await supabase.auth.api.sendMagicLinkEmail(email);
-    if (error) return res.status(400).json({ error: "Failed to resend OTP." });
-    res.json({ message: "OTP resent successfully." });
-  } catch (err) {
-    console.error("Resend OTP error:", err);
-    res.status(500).json({ error: "Internal server error." });
-  }
-});
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-// User login endpoint
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  console.log('Received login attempt:', req.body);
-
-  console.log('Backend attempting signin with:', { email, password });
-  try {
-    console.log('About to call supabase.auth.signInWithPassword');
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
+    // Register user in Supabase Authentication
+    const { data: authUser, error: authError } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password
     });
 
-    console.log('supabase.auth.signInWithPassword result:', { data, error });
-
-    if (error) {
-      console.error("Supabase signin error:", error);
-      return res.status(401).json({ error: "Invalid credentials." });
+    if (authError) {
+      return res.status(400).json({ error: authError.message });
     }
 
-    // Only send success response if data (user and session) is present
-    if (data?.user && data?.session) {
-      res.json({ success: true, message: "Logged in successfully", data });
-    } else {
-      // If no error but no user/session, still treat as invalid credentials
-      return res.status(401).json({ error: "Invalid credentials." });
+    // Store user in `user_accounts` table
+    const { data: newUser, error: dbError } = await supabase
+      .from("user_accounts")
+      .insert([
+        {
+          user_id: authUser.user.id,
+          full_name,
+          email: normalizedEmail,
+          phone_number,
+          date_of_birth,
+          residential_address,
+          account_type,
+          username: normalizedUsername,
+          password_hash: hashedPassword
+        }
+      ])
+      .select()
+      .single();
+
+    if (dbError) {
+      return res.status(500).json({ error: dbError.message });
     }
 
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ error: "Internal server error." });
+    res.status(201).json({ message: "User registered successfully", user: newUser });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// Refresh token endpoint (replaced with Supabase's built-in session handling)
-router.post("/refresh-token", (req, res) => {
-  return res.status(400).json({ error: "Refresh token functionality is now handled by Supabase." });
+// User login
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find user
+    const { data: user, error } = await supabase
+      .from("user_accounts")
+      .select("*")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (!user || error) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ user_id: user.user_id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    res.json({ message: "Login successful", token, user });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;
