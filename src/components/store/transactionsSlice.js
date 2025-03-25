@@ -29,6 +29,11 @@ const transactionsSlice = createSlice({
     createStatus: "idle",
     error: null,
   },
+  reducers: {
+    addTransaction: (state, action) => {
+      state.transactions.push(action.payload);
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchTransactions.pending, (state) => {
@@ -56,4 +61,5 @@ const transactionsSlice = createSlice({
   },
 });
 
+export const { addTransaction } = transactionsSlice.actions; // Export addTransaction action
 export default transactionsSlice.reducer;

@@ -14,6 +14,11 @@ import expendituresReducer from "./expendituresSlice";
 import investmentsReducer from "./investmentsSlice";
 import analyticsReducer from "./analyticsSlice";
 import withdrawReducer from "./withdrawSlice";
+import dashboardReducer from "./dashboardSlice";
+import usersReducer from "./usersSlice";
+import adminloansReducer from "./adminloansSlice";
+import adminAccountReducer from './adminAccountSlice'; // Correct import path
+
 
 const store = configureStore({
   reducer: {
@@ -32,6 +37,11 @@ const store = configureStore({
     investments: investmentsReducer,
     analytics: analyticsReducer,
     withdraw: withdrawReducer,
+    dashboard: dashboardReducer,
+    users: usersReducer,
+    adminloans: adminloansReducer,
+    admintransactions: adminloansReducer,
+    adminAccount: adminAccountReducer,
   },
 });
 

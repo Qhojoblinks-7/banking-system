@@ -1,25 +1,44 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { selectSupabaseAccessToken } from "../store/authSlice"; // Import the selector
 
 export const submitLoanRequest = createAsyncThunk(
   "loans/submit",
-  async (loanData) => {
-    const response = await axios.post("/api/loans", loanData, {
-      withCredentials: true,
-    });
-    return response.data;
+  async (loanData, { getState }) => { // Added getState
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token
+    try {
+      const response = await axios.post("/api/loans", loanData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // Include the token
+        },
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 );
 
-export const fetchLoans = createAsyncThunk("loans/fetch", async () => {
-  const response = await axios.get("/api/loans", { withCredentials: true });
-  return response.data;
+export const fetchLoans = createAsyncThunk("loans/fetch", async (_, { getState }) => { // Added getState
+  const accessToken = selectSupabaseAccessToken(getState()); // Get the token
+  try {
+    const response = await axios.get("/api/loans", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`, // Include the token
+      },
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 });
 
 const loansSlice = createSlice({
   name: "loans",
   initialState: {
-    loans: [],
+    loans:[],
     submitStatus: "idle",
     fetchStatus: "idle",
     error: null,

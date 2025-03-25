@@ -1,61 +1,38 @@
-// Layout.js
-import { Link } from 'react-router-dom';
+import { useState } from "react";
+import DesktopSidebar from "./userdashboard/UserDashboard";
+import MobileSidebar from "./userdashboard/MobileSidebar";
+import Header from "./Header";
 
-const Layout = ({ children }) => {
+const Layout = () => {
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  const toggleMobileSidebar = () => setMobileSidebarOpen(!mobileSidebarOpen);
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <aside className="w-64 bg-teal-900 text-white flex flex-col">
-        <div className="p-4 text-center font-bold text-xl border-b border-teal-700">
-          User Dashboard
-        </div>
-        <nav className="flex-1 p-4">
-          <ul>
-            <li className="mb-2">
-              <Link to="/account-overview" className="hover:text-gray-300">
-                Account Overview
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/bill-payments" className="hover:text-gray-300">
-                Transactions
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/bill-payments" className="hover:text-gray-300">
-                Transfer Funds
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/bill-payments" className="hover:text-gray-300">
-                Loan Application
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/bill-payments" className="hover:text-gray-300">
-                Investment Opportunities
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/bill-payments" className="hover:text-gray-300">
-                Settings
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/bill-payments" className="hover:text-gray-300">
-                Logout
-              </Link>
-            </li>
-            {/* Add more navigation links as needed */}
-          </ul>
-        </nav>
-        <footer className="p-4 text-center border-t border-teal-700">
-          &copy; {new Date().getFullYear()} User Dashboard. All Rights Reserved.
-        </footer>
-      </aside>
+    <div className="min-h-screen bg-gray-100">
+      {/* HEADER */}
+      <Header toggleMobileSidebar={toggleMobileSidebar} />
 
-      {/* Main Content */}
-      <main className="flex-1 p-8 overflow-auto">{children}</main>
+      {/* MAIN WRAPPER */}
+      <div className="flex">
+        {/* DESKTOP SIDEBAR */}
+        <div className="hidden md:block w-64">
+          <DesktopSidebar />
+        </div>
+
+        {/* MOBILE SIDEBAR (overlays content when open) */}
+        {mobileSidebarOpen && (
+          <MobileSidebar toggleMobileSidebar={toggleMobileSidebar} />
+        )}
+
+        {/* MAIN CONTENT AREA */}
+        {/* The margin-left on md screens ensures the content doesn't get overlapped by the sidebar */}
+        <div className="flex-1 p-4 md:ml-64">
+          {/* Your page content here */}
+          <h1 className="text-2xl font-bold">Main Content</h1>
+          <p>Lorem ipsum dolor sit amet...</p>
+        </div>
+      </div>
     </div>
   );
 };

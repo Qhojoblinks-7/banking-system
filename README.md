@@ -32,6 +32,13 @@ CREATE TABLE IF NOT EXISTS public.bank_accounts (
 );
 
 --------------------------------------------------
+-- 3.1 Add unique constraint to prevent duplicate account types per user
+--------------------------------------------------
+CREATE UNIQUE INDEX IF NOT EXISTS unique_user_account_type
+ON public.bank_accounts (user_id, account_type);
+
+
+--------------------------------------------------
 -- 4. Create the Transactions Table
 --------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.transactions (

@@ -1,30 +1,47 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { selectSupabaseAccessToken } from "../store/authSlice"; // Import the selector
 
 export const fetchExpenditures = createAsyncThunk(
   "expenditures/fetch",
-  async () => {
-    const response = await axios.get("/api/expenditures", {
-      withCredentials: true,
-    });
-    return response.data;
+  async (_, { getState }) => { // Added getState
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token
+    try {
+      const response = await axios.get("/api/expenditures", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // Include the token
+        },
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 );
 
 export const addExpenditure = createAsyncThunk(
   "expenditures/add",
-  async (expenditureData) => {
-    const response = await axios.post("/api/expenditures", expenditureData, {
-      withCredentials: true,
-    });
-    return response.data;
+  async (expenditureData, { getState }) => { // Added getState
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token
+    try {
+      const response = await axios.post("/api/expenditures", expenditureData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // Include the token
+        },
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 );
 
 const expendituresSlice = createSlice({
   name: "expenditures",
   initialState: {
-    expenditures: [],
+    expenditures:[],
     fetchStatus: "idle",
     addStatus: "idle",
     error: null,

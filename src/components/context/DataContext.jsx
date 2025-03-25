@@ -176,7 +176,7 @@
 //     localStorage.removeItem('token');
 //   };
 
-//   // Register: call /api/register
+//   // register: call /api/register
 //   const register = async (registrationData) => {
 //     try {
 //       setLoading(true);

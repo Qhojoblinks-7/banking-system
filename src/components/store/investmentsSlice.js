@@ -1,13 +1,20 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { selectSupabaseAccessToken } from "../store/authSlice"; // Import the selector
 
 // Async thunk to fetch investment options
 export const fetchInvestmentOptions = createAsyncThunk(
   "investments/fetchInvestmentOptions",
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => { // Added getState
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token
     try {
       // Replace this URL with your actual endpoint if needed
-      const response = await axios.get("/api/investments/options", { withCredentials: true });
+      const response = await axios.get("/api/investments/options", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // Include the token
+        },
+        withCredentials: true,
+      });
       // Expected response format: { options: [...] }
       return response.data;
     } catch (error) {
@@ -19,9 +26,13 @@ export const fetchInvestmentOptions = createAsyncThunk(
 // Async thunk to add an investment
 export const addInvestment = createAsyncThunk(
   "investments/addInvestment",
-  async (investmentData, { rejectWithValue }) => {
+  async (investmentData, { getState, rejectWithValue }) => { // Added getState
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token
     try {
       const response = await axios.post("/api/investments", investmentData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // Include the token
+        },
         withCredentials: true,
       });
       // Expected response format: { investment: {...} }
@@ -33,8 +44,8 @@ export const addInvestment = createAsyncThunk(
 );
 
 const initialState = {
-  investmentOptions: [],
-  investments: [],
+  investmentOptions:[],
+  investments:[],
   status: "idle",
   error: null,
 };

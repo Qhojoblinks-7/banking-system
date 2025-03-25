@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { registerUser, loginUser } from "../store/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser, loginUser, selectregisterStatus, selectregisterError, selectLoginStatus, selectLoginError } from "../store/authSlice";
 import logo from "../../assets/Layer 2.png";
 
 const stepsConfig = [
@@ -64,12 +64,15 @@ const stepsConfig = [
   },
 ];
 
-const Register = () => {
+const register = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const registerStatus = useSelector(selectregisterStatus);
+  const registerError = useSelector(selectregisterError);
+  const loginStatus = useSelector(selectLoginStatus);
+  const loginError = useSelector(selectLoginError);
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [processing, setProcessing] = useState(false);
   const [alert, setAlert] = useState({
     message: "",
     classes: "",
@@ -87,6 +90,8 @@ const Register = () => {
     confirm_password: "",
   });
 
+  const isProcessing = registerStatus === "loading" || loginStatus === "loading";
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -99,7 +104,11 @@ const Register = () => {
 
   const validateStep = () => {
     const currentField = stepsConfig[currentStep];
-    if (!formData[currentField.name]) {
+    if (!formData[currentField.name] && currentField.type !== "select") {
+      showAlert(`${currentField.label} is required.`, "bg-red-100 text-red-700");
+      return false;
+    }
+    if (currentField.type === "select" && formData[currentField.name] === "") {
       showAlert(`${currentField.label} is required.`, "bg-red-100 text-red-700");
       return false;
     }
@@ -124,33 +133,33 @@ const Register = () => {
       showAlert("Passwords do not match!", "bg-red-100 text-red-700");
       return;
     }
-    setProcessing(true);
-    try {
-      // Omit confirm_password from registration data
-      const { confirm_password, ...registrationData } = formData;
-      // Dispatch registration thunk
-      await dispatch(registerUser(registrationData)).unwrap();
+    // Send the entire formData object
+    dispatch(registerUser(formData));
+  };
 
-      // Dispatch login thunk with credentials directly (email & password)
-      await dispatch(
-        loginUser({ email: registrationData.email, password: registrationData.password })
-      ).unwrap();
+  useEffect(() => {
+    if (registerStatus === "succeeded") {
+      showAlert("Registration successful! Attempting login...", "bg-green-100 text-green-700");
+      dispatch(loginUser({ email: formData.email, password: formData.password }));
+    } else if (registerStatus === "failed" && registerError) {
+      showAlert(`Registration failed. ${registerError}`, "bg-red-100 text-red-700");
+    }
+  }, [registerStatus, registerError, formData.email, formData.password, dispatch, showAlert]);
 
-      showAlert("Registration successful! Redirecting...", "bg-green-100 text-green-700");
+  useEffect(() => {
+    if (loginStatus === "succeeded") {
+      showAlert("Login successful! Redirecting...", "bg-green-100 text-green-700");
       setTimeout(() => {
         navigate("/user-account-overview");
       }, 2000);
-    } catch (error) {
-      console.error("Registration error:", error);
-      showAlert(`Error: ${error}`, "bg-red-100 text-red-700");
-    } finally {
-      setProcessing(false);
+    } else if (loginStatus === "failed" && loginError) {
+      showAlert(`Login failed after registration. ${loginError}`, "bg-red-100 text-red-700");
     }
-  };
+  }, [loginStatus, loginError, navigate, showAlert]);
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-sky-50 font-sans p-4 relative">
-      {processing && (
+      {isProcessing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <img src={logo} alt="Processing..." className="w-24 h-24 animate-spin" />
         </div>
@@ -191,7 +200,7 @@ const Register = () => {
                   value={formData[step.name]}
                   onChange={handleChange}
                   placeholder={step.placeholder || ""}
-                  required
+                  required={step.id !== "step3" && step.id !== "step4" && step.id !== "step5"} // Adjust required fields as needed
                   className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
                 />
               ) : (
@@ -234,7 +243,8 @@ const Register = () => {
             {currentStep === stepsConfig.length - 1 && (
               <button
                 type="submit"
-                className="bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800"
+                className={`bg-green-700 text-white font-semibold rounded px-4 py-2 hover:bg-green-800 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={isProcessing}
               >
                 Create Account
               </button>
@@ -255,4 +265,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default register;

@@ -1,10 +1,15 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { selectSupabaseAccessToken } from "./authSlice"; // Import the selector
 
 export const addCard = createAsyncThunk(
   "cards/add",
-  async (cardData) => {
+  async (cardData, { getState }) => { // Added getState
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token
     const response = await axios.post("/api/cards", cardData, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`, // Include the token
+      },
       withCredentials: true,
     });
     return response.data;
@@ -13,8 +18,12 @@ export const addCard = createAsyncThunk(
 
 export const fetchCards = createAsyncThunk(
   "cards/fetch",
-  async () => {
+  async (_, { getState }) => { // Added getState
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token
     const response = await axios.get("/api/cards", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`, // Include the token
+      },
       withCredentials: true,
     });
     return response.data;
@@ -23,8 +32,12 @@ export const fetchCards = createAsyncThunk(
 
 export const verifyCard = createAsyncThunk(
   "cards/verify",
-  async (verificationData) => {
+  async (verificationData, { getState }) => { // Added getState
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token
     const response = await axios.post("/api/cards/verify", verificationData, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`, // Include the token
+      },
       withCredentials: true,
     });
     return response.data;
@@ -34,7 +47,7 @@ export const verifyCard = createAsyncThunk(
 const cardsSlice = createSlice({
   name: "cards",
   initialState: {
-    cards: [],
+    cards:[],
     addStatus: "idle",
     fetchStatus: "idle",
     verifyStatus: "idle",

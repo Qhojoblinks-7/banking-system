@@ -1,13 +1,22 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { selectSupabaseAccessToken } from "./authSlice"; // Import the selector
 
 export const fetchAnalytics = createAsyncThunk(
   "analytics/fetch",
-  async () => {
-    const response = await axios.get("/api/analytics", {
-      withCredentials: true,
-    });
-    return response.data;
+  async (_, { getState }) => { // Added getState as an argument
+    const accessToken = selectSupabaseAccessToken(getState()); // Get the token from the auth state
+    try {
+      const response = await axios.get("/api/analytics", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // Include the token in the headers
+        },
+        withCredentials: true, // Keep this if your backend requires it for other reasons (e.g., cookies)
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 );
 
