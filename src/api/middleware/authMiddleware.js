@@ -1,31 +1,29 @@
-// src/api/middleware/authMiddleware.js
-import {supabaseAdmin}  from '../../supabaseServiceRole.js'; // Adjust path as needed
+import { supabaseAdmin } from '../../supabaseServiceRole.js'; // Adjust path if necessary
 
 export const authenticateToken = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized - Token missing' });
-  }
-
   try {
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized - Token missing or invalid format' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
 
     if (error) {
       console.error("Supabase Admin SDK token verification error:", error);
       return res.status(401).json({ error: 'Unauthorized - Invalid token' });
     }
 
-    if (!user) {
+    if (!data || !data.user || !data.user.id) {
       return res.status(401).json({ error: 'Unauthorized - Invalid token or user not found' });
     }
 
-    req.user = user; // Attach user information to the request
+    req.user = { user_id: data.user.id }; 
     next();
-
-  } catch (error) {
-    console.error("Error verifying token with Supabase Admin SDK:", error);
+  } catch (err) {
+    console.error("Unexpected error in token authentication:", err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
